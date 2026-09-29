@@ -16,6 +16,7 @@ pantalla, en la matriz y en el PDF.
 |---|---|---|
 | Cumplimiento CDC | [Panel de Gestión Institucional 2026](https://upcg-mbn.github.io/panel_gestion_2026/) (DIPLAP) | Real |
 | Gestión DCPR | [Panel de Gestión Mensual DCPR](https://bienesnacionales.github.io/mbn-dcpr-reportes/) | Real |
+| Presupuesto CDC | [Panel Presupuestario MBN](https://presupuestombn.github.io/panel-presupuestario-mbn/) (Depto. de Presupuesto) | Real |
 | Catastro | `plantillas/catastro.csv` (informe trimestral) | Ejemplo |
 | Gestión de Bienes | por definir (ver Pendientes) | Ejemplo |
 | Oficios | `plantillas/oficios.csv` | Ejemplo |
@@ -40,7 +41,7 @@ python -m http.server 8765 --bind 127.0.0.1
 | `datos.js` | **Generado.** `window.DATOS = {…}` con un bloque por dimensión. No editar a mano. |
 | `agregar.js` | Filtros y agregaciones puras, sin DOM: días de respuesta, variaciones contra el periodo anterior, top de trámites y las reglas del semáforo. Se prueba con Node. |
 | `prueba.js` | `node prueba.js`. Sin framework: `assert` y listo. |
-| `extraer.py` | Construye `datos.js`: lee los paneles de DIPLAP y del DCPR y genera la parte de ejemplo. `FUENTE_CDC` y `FUENTE_DCPR` (en `.env`) aceptan una ruta local. |
+| `extraer.py` | Construye `datos.js`: lee los paneles de DIPLAP, del DCPR y del Panel Presupuestario, y genera la parte de ejemplo. `FUENTE_CDC`, `FUENTE_DCPR` y `FUENTE_PRESUPUESTO` (en `.env`) aceptan una ruta local. |
 | `mapa.js` | **Generado en `DASHBOARD SUBSE`.** Chile en tres paneles, como rutas SVG ya proyectadas. Copia literal. |
 | `ds/` | Sistema de diseño MinBienes: tokens, fuentes gobCL y logos. Copia literal de `..\DASHBOARD SUBSE\ds\`. |
 | `plantillas/` | Los formatos de captura propuestos para las tres fuentes que no existen, con `LEEME.md`. |
@@ -58,6 +59,7 @@ python -m http.server 8765 --bind 127.0.0.1
 | **Gestión de Bienes** | Los cuatro trámites que más gestiona cada SEREMI y cómo se mueven mes a mes. Pendiente de definir qué se mide. |
 | **Gestión DCPR** | Títulos entregados y solicitudes tramitadas (positivas con ingreso al CBR, negativas y enviadas a tribunales): acumulado del año y variación desde el informe anterior, por SEREMI. |
 | **Gobierno en terreno** | Salidas a terreno sobre el mapa regional y las minutas de la última quincena. |
+| **Presupuesto CDC** | Presupuesto vigente, devengado y % de ejecución del Convenio de Desempeño Colectivo por SEREMI, con el detalle de cada una. No es una de las cinco dimensiones del documento del Gabinete ni entra al semáforo: es un corte único («resultado final» del mes) del Panel Presupuestario, sin serie mensual. |
 
 El filtro de SEREMI es global: se aplica a todas las páginas. También se puede
 elegir una región haciendo clic en el mapa o en una barra del CDC o del DCPR.

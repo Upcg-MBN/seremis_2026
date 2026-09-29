@@ -70,6 +70,13 @@ var M = {
       { r: 0, q: 2, comuna: 'Putre', actores: ['Alcalde', 'Gremio'], temas: 't' },
       { r: 1, q: 0, comuna: 'Punta Arenas', actores: ['Delegado Presidencial'], temas: 't' }
     ]
+  },
+  presupuesto: {
+    corte: '2026-08',
+    filas: [
+      { r: 0, presupuesto: 100, devengado: 70, pct: 0.7, meta: 0.65 },    // cumple
+      { r: 1, presupuesto: 200, devengado: 90, pct: 0.45, meta: 0.65 }    // no cumple
+    ]
   }
 };
 
@@ -220,6 +227,22 @@ prueba('cada alerta trae su motivo escrito, las críticas primero y luego norte 
   });
 });
 
+prueba('presupuesto: con todas suma montos y cuenta regiones en meta', function () {
+  var x = AGG.presupuesto(M, null);
+  assert.strictEqual(x.budget, 300);
+  assert.strictEqual(x.dev, 160);
+  assert.ok(Math.abs(x.pct - 160 / 300) < 1e-9);
+  assert.strictEqual(x.enMeta, 1);      // solo Arica y Parinacota cumple su meta
+  assert.strictEqual(x.total, 2);
+});
+
+prueba('presupuesto: filtrado por SEREMI trae solo su propia fila', function () {
+  var x0 = AGG.presupuesto(M, 0), x1 = AGG.presupuesto(M, 1);
+  assert.strictEqual(x0.budget, 100);
+  assert.strictEqual(x0.enMeta, 1);
+  assert.strictEqual(x1.enMeta, 0);     // 45 % < 65 % de meta
+});
+
 prueba('cortes() separa un valor muy grande en vez de repartir por cuantiles', function () {
   var c = AGG.cortes([1, 2, 3, 4, 5, 100], 3);
   assert.strictEqual(c.length, 2);
@@ -292,6 +315,15 @@ if (!fs.existsSync(__dirname + '/datos.js')) {
       assert.ok(c[i] < D.gestion.meses.length && c[i + 1] < 16
                 && c[i + 2] < D.gestion.tramites.length && c[i + 3] > 0);
     }
+  });
+
+  prueba('datos.js: presupuesto CDC trae las 16 SEREMIs y cuadra con el total', function () {
+    assert.strictEqual(D.presupuesto.origen, 'presupuesto');
+    assert.strictEqual(D.presupuesto.filas.length, 16);
+    var x = AGG.presupuesto(D, null);
+    assert.strictEqual(x.budget, D.presupuesto.budget);
+    assert.strictEqual(x.dev, D.presupuesto.dev);
+    assert.ok(x.enMeta >= 0 && x.enMeta <= 16);
   });
 
   prueba('datos.js: el mes de corte es el último y va marcado como parcial', function () {

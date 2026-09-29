@@ -149,6 +149,9 @@ button{font:inherit; color:inherit}
 .kpi-num--verde{color:var(--exito-darken-3)}
 .kpi-num--rojo{color:var(--error-darken-3)}
 .kpi-num--ambar{color:var(--chart-estado-alerta)}
+/* Cifras en pesos (p. ej. "M$ 4.198.585.413"): a 2.75rem no caben en el ancho
+   de la tarjeta. Mismo tipo y peso, tamaño menor. */
+.kpi-num--money{font-size:1.75rem}
 .kpi-pie{display:flex; align-items:center; gap:0.375rem; font-size:0.875rem; color:var(--gris-60)}
 
 /* ---------- Tarjetas ---------- */
@@ -398,6 +401,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   .kpi-rot{font-size:0.8125rem; gap:0.5rem}
   .kpi-rot .ico{width:1.125rem; height:1.125rem}
   .kpi-num{font-size:1.625rem}
+  .kpi-num--money{font-size:1.1875rem}
   .kpi-pie{font-size:0.75rem; align-items:flex-start}
   .ind-num{font-size:1.375rem}
   .barra-fila{grid-template-columns:minmax(0,8rem) minmax(0,1fr) 4.25rem; gap:0.5rem}
@@ -452,6 +456,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 .informe .kpi{gap:2mm}
 .informe .kpi-rot{font-size:9.5pt}
 .informe .kpi-num{font-size:20pt}
+.informe .kpi-num--money{font-size:13pt}
 .informe .kpi-pie{font-size:8.5pt}
 .informe .ind-num{font-size:16pt}
 .informe .t-cab h2{font-size:13pt}
@@ -508,6 +513,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       <button type="button" class="pag" data-pag="gestion" title="Gestión de Bienes"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="casa"></svg><span class="txt">Gestión de Bienes</span></button>
       <button type="button" class="pag" data-pag="dcpr" title="Gestión DCPR"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="documento"></svg><span class="txt">Gestión DCPR</span></button>
       <button type="button" class="pag" data-pag="terreno" title="Gobierno en terreno"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="pin"></svg><span class="txt">Gobierno en terreno</span></button>
+      <button type="button" class="pag" data-pag="presupuesto" title="Presupuesto"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="moneda"></svg><span class="txt">Presupuesto</span></button>
       <div class="menu-pie">
         <button type="button" id="abrir-glosario" title="Glosario y reglas de alerta"><svg class="ico ico--22" viewBox="0 0 24 24" aria-hidden="true" data-i="ayuda"></svg><span class="txt">Glosario y reglas</span></button>
       </div>
@@ -539,7 +545,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 
       <!-- ---------------------------------------------- Resumen ejecutivo -->
       <section class="pagina" id="p-resumen" aria-label="Resumen ejecutivo">
-        <div class="kpis" id="kpis" data-sec="kpis"></div>
+        <div class="kpis kpis--5" id="kpis" data-sec="kpis"></div>
         <div class="fila fila--toda">
           <div class="tarjeta col ancho" data-sec="matriz">
             <div class="t-cab">
@@ -686,6 +692,16 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         </div>
       </section>
 
+      <!-- ------------------------------------------------------- Presupuesto -->
+      <section class="pagina" id="p-presupuesto" aria-label="Presupuesto" hidden>
+        <div class="kpis" id="pr-kpis" data-sec="pr-kpis"></div>
+        <div class="tarjeta col" data-sec="pr-tabla">
+          <div class="t-cab"><h2>Detalle por SEREMI</h2></div>
+          <p class="t-sub" id="pr-tabla-sub"></p>
+          <div class="datos" id="pr-tabla"></div>
+        </div>
+      </section>
+
       <!-- Solo para el informe PDF: en pantalla el glosario es el diálogo. -->
       <section class="pagina" id="p-glosario" aria-label="Glosario y reglas de alerta" hidden>
         <div class="tarjeta" data-sec="glosario"><dl class="glo-imp" id="glo-imp"></dl></div>
@@ -739,6 +755,10 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         <label class="opcion"><input type="checkbox" name="sec" value="ter-tabla">Tabla de salidas por región</label>
         <label class="opcion"><input type="checkbox" name="sec" value="ter-minutas">Minutas de la última quincena</label>
       </fieldset>
+      <fieldset><legend>Presupuesto</legend>
+        <label class="opcion"><input type="checkbox" name="sec" value="pr-kpis" checked>Indicadores de ejecución</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="pr-tabla" checked>Detalle por SEREMI</label>
+      </fieldset>
       <fieldset><legend>Referencia</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="glosario" checked>Glosario y reglas de alerta</label>
       </fieldset>
@@ -790,6 +810,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     casa: '<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>',
     correo: '<path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>',
     pin: '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>',
+    moneda: '<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>',
     personas: '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>'
   };
   function ico(nombre, extra) {
@@ -803,6 +824,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
                'septiembre', 'octubre', 'noviembre', 'diciembre'];
   function num(n) { return Math.round(n || 0).toLocaleString('es-CL'); }
+  function money(n) { return 'M$ ' + num(n); }
   function dec(n, d) { return (n === null || n === undefined) ? '—' : Number(n).toLocaleString('es-CL', { minimumFractionDigits: d, maximumFractionDigits: d }); }
   function mesDe(k) { return MESES[+k.slice(5, 7) - 1]; }
   function mesCorto(k) { var m = mesDe(k); return m.charAt(0).toUpperCase() + m.slice(1, 3); }
@@ -915,6 +937,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     var dimsCriticas = filtro.r === null ? 0 : reales.filter(function (d) { return SEM[filtro.r].celdas[d[0]] === 'critico'; }).length;
     var c = AGG.cdc(D, filtro.r), ec = AGG.estadoCumpl(c.global);
     var dc = AGG.dcpr(D, filtro.r);
+    var pr = AGG.presupuesto(D, filtro.r);
 
     var tarjetas = [
       ['bandera', 'Cumplimiento CDC', COLOR[ec], pct(c.global),
@@ -923,6 +946,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
        '<div class="kpi-pie">' + desde(dc.titulos) + '</div>'],
       ['documento', 'Solicitudes tramitadas en 2026', '', num(dc.tramitadas.actual),
        '<div class="kpi-pie">' + desde(dc.tramitadas) + '</div>'],
+      ['moneda', 'Ejecución presupuestaria CDC', '', pct(pr.pct),
+       '<div class="kpi-pie">Corte ' + mesLargo(D.presupuesto.corte) + ', Panel Presupuestario</div>'],
       filtro.r === null
         ? ['alerta', 'SEREMIs en rojo con datos reales', criticas ? 'rojo' : 'verde', num(criticas),
            '<div class="kpi-pie">' + num(alertadas) + ' más en alerta, de ' + num(rs.length) + '</div>' +
@@ -1431,6 +1456,41 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     return (q.slice(-1) === '1' ? '1ª' : '2ª') + ' quincena de ' + mesLargo(q.slice(0, 7));
   }
 
+  // -------------------------------------------------------------- presupuesto
+  // Sin serie mensual (§ arriba en agregar.js): un solo corte, sin variación.
+  function pintarPresupuesto() {
+    var x = AGG.presupuesto(D, filtro.r), corte = mesLargo(D.presupuesto.corte);
+    // Las tres comparten el modificador --money: si el % quedara al tamaño
+    // grande de las demás tarjetas del panel, al lado de cifras en pesos más
+    // chicas por ancho de tarjeta (§ CSS), la fila se ve descompensada.
+    var pie = '<div class="kpi-pie">Corte ' + corte + '</div>';
+    var tarjetas = [
+      ['moneda', 'Presupuesto vigente CDC', '', money(x.budget), pie, true],
+      ['moneda', 'Devengado CDC', '', money(x.dev), pie, true],
+      ['bandera', '% de ejecución', '', pct(x.pct), pie, true]
+    ];
+    $('pr-kpis').innerHTML = tarjetas.map(function (t) {
+      var c = t[2] ? ' kpi-rot--' + t[2] : '';
+      var n = (t[2] ? ' kpi-num--' + t[2] : '') + (t[5] ? ' kpi-num--money' : '');
+      return '<div class="tarjeta kpi"><div class="kpi-rot' + c + '">' + ico(t[0], 'ico--22') + t[1] + '</div>' +
+        '<div class="kpi-num' + n + '">' + t[3] + '</div>' + t[4] + '</div>';
+    }).join('');
+
+    $('pr-tabla-sub').textContent = 'Convenio de Desempeño Colectivo: presupuesto vigente y devengado a ' + corte +
+      '. Fuente: Panel Presupuestario MBN, Departamento de Presupuesto.';
+    var filas = regiones().map(function (r) {
+      var f = D.presupuesto.filas[r], cumple = f.pct >= f.meta;
+      return [esc(D.regiones[r].nombre), money(f.presupuesto), money(f.devengado), pct(f.pct), pct(f.meta),
+              sem(cumple ? 'bueno' : 'alerta', cumple ? 'Cumple' : 'Bajo meta')];
+    });
+    if (filtro.r === null) {
+      filas.push(['<b>Total general</b>', money(x.budget), money(x.dev), pct(x.pct), '',
+                  sem(x.enMeta === x.total ? 'bueno' : 'alerta', x.enMeta + '/' + x.total + ' en meta')]);
+    }
+    $('pr-tabla').innerHTML = tablaHtml(
+      ['SEREMI', 'Presupuesto vigente', 'Devengado', '% ejecución', 'Meta', 'Estado'], filas, true);
+  }
+
   // ------------------------------------------------------------- tablas
   function tablaHtml(cols, filas, crudo, izq) {
     var aIzq = function (i) { return izq && izq.indexOf(i) >= 0 ? ' class="izq"' : ''; };
@@ -1463,6 +1523,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     pintarGestion();
     pintarDcpr();
     pintarTerreno();
+    pintarPresupuesto();
     pintarAviso();
     $('f-reset').hidden = filtro.r === null;
     guardarUrl();

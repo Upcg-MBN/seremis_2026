@@ -202,6 +202,23 @@
     }, 'bueno');
   }
 
+  // ---------------------------------------------------------- presupuesto CDC
+  // Sección aparte, fuera de las cinco dimensiones del documento y del
+  // semáforo: el Panel Presupuestario solo publica el corte vigente, sin
+  // serie mensual, así que aquí no hay variación contra el periodo anterior
+  // ni estado de alerta que acordar con Gabinete. Con r null suma las 16.
+  function presupuesto(D, r) {
+    var todas = r === null || r === undefined;
+    var filas = D.presupuesto.filas.filter(function (f) { return todas || f.r === r; });
+    var budget = filas.reduce(function (a, f) { return a + f.presupuesto; }, 0);
+    var dev = filas.reduce(function (a, f) { return a + f.devengado; }, 0);
+    var enMeta = filas.filter(function (f) { return f.pct >= f.meta; }).length;
+    return {
+      budget: budget, dev: dev, pct: budget ? dev / budget : null,
+      enMeta: enMeta, total: filas.length, filas: filas
+    };
+  }
+
   // -------------------------------------------------------- §2.4b gestión DCPR
   // El informe del DCPR publica cifras acumuladas en el año, así que la
   // variación respecto al periodo anterior es cuánto creció el acumulado desde
@@ -415,6 +432,7 @@
     REGLAS: REGLAS, dia: dia, mediana: mediana, variacion: variacion,
     cdc: cdc, estadoCumpl: estadoCumpl, oficios: oficios, catastro: catastro,
     participacion: participacion, gestion: gestion, dcpr: dcpr, terreno: terreno,
+    presupuesto: presupuesto,
     semaforo: semaforo, alertas: alertas, cortes: cortes
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -40,6 +40,7 @@ Las cifras **tienen que concordar** con los paneles fuente.
 | 2.4 a | Gestión de Bienes | mensual | ¿Planilla DBN o base GXP? | **Por definir** (§8). Datos de ejemplo. |
 | 2.4 b | Gestión DCPR | mensual | Informe de Gestión DCPR | **Real.** `extraer.py` baja `https://bienesnacionales.github.io/mbn-dcpr-reportes/` (25 MB): un `const MES_AAAA = {...}` por informe y el detalle por expediente en `<script id="data-…" data-gz="1">` (gzip + base64). Títulos por región vienen agregados; las tramitadas por región solo salen del detalle (`data-tramitadas*`), que trae **nombre y RUT**: se cuenta y se descarta. |
 | 2.5 | Gobierno en terreno | quincenal | Planilla de cada SEREMI | **Por crear.** `plantillas/gobierno_en_terreno.csv`. |
+| — | Presupuesto CDC | sin serie, corte único | [Panel Presupuestario MBN](https://presupuestombn.github.io/panel-presupuestario-mbn/) (Depto. de Presupuesto) | **Real, fuera de las cinco dimensiones del documento.** Página aparte, sin semáforo ni umbral que acordar con Gabinete: presupuesto vigente, devengado y meta del CDC por SEREMI, al «resultado final» del mes. El panel publica solo el corte vigente, no una serie mensual, así que no hay variación contra el periodo anterior. |
 
 Lo que el documento pide y **no** hay que confundir:
 
@@ -105,6 +106,11 @@ Un bloque por dimensión: `cdc`, `oficios`, `catastro`, `gestion` (Bienes),
 ejemplo). `cdc.sumas[r][mes] = [Σ contrib. cumplimiento, Σ contrib. meta]`;
 `cdc.filas` es el detalle por indicador **solo del último mes**.
 `dcpr.titulos` y `dcpr.tramitadas` son tablas `[región][mes]`.
+
+Aparte, `presupuesto`: no es una de las cinco dimensiones ni tiene `r` en el
+semáforo. `presupuesto.filas[r] = { r, presupuesto, devengado, pct, meta }`,
+un corte único (`presupuesto.corte`, `'AAAA-MM'`) sin serie mensual, así que
+`agregar.js` no calcula variación para este bloque.
 
 `extraer.py` **se niega a escribir** si la suma de las 16 regiones del DCPR no
 da el total nacional que publica el informe (`_cuadra()`), o si aparece un

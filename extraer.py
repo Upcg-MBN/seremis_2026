@@ -8,6 +8,7 @@ Fuentes:
 
     §2.1 CDC                  Panel de Gestión Institucional de DIPLAP (real)
     §2.4b Gestión DCPR        Panel de Gestión Mensual del DCPR (real)
+    Presupuesto CDC           Panel Presupuestario MBN (real, sin serie mensual)
     §2.2 Oficios              plantillas/oficios.csv              (ejemplo)
     §2.3 Catastro             plantillas/catastro.csv             (ejemplo)
     §2.4a Gestión Bienes      por definir, ver README             (ejemplo)
@@ -37,6 +38,7 @@ SALIDA = os.path.join(AQUI, "datos.js")
 
 URL_CDC = "https://upcg-mbn.github.io/panel_gestion_2026/"
 URL_DCPR = "https://bienesnacionales.github.io/mbn-dcpr-reportes/"
+URL_PRESUPUESTO = "https://presupuestombn.github.io/panel-presupuestario-mbn/"
 
 SEMILLA = 20260924      # la parte de ejemplo es determinista
 CORTE = "2026-09"       # último mes de los datos de ejemplo; se dibuja como parcial
@@ -86,7 +88,11 @@ def _clave(valor):
 _CODIGOS = {c for c, _ in REGIONES}
 _INDICE = {c: i for i, (c, _) in enumerate(REGIONES)}
 _POR_NOMBRE = {_clave(n): c for c, n in REGIONES}
-_POR_NOMBRE.update({"arica": "15", "araucania": "09"})
+_POR_NOMBRE.update({
+    "arica": "15", "araucania": "09",
+    # El Panel Presupuestario usa el nombre formal completo de la región.
+    "libertadorgeneralbernardoohiggins": "06",
+})
 _SIN_MAPEO = set()
 
 
@@ -258,6 +264,49 @@ def _cuadra(mes, que, serie, k, publicado):
     if suma != publicado:
         raise ValueError("DCPR %s, %s: las regiones suman %s y el informe publica %s"
                          % (mes, que, suma, publicado))
+
+
+# --------------------------------------------------------- presupuesto CDC
+# El Panel Presupuestario del Departamento de Presupuesto publica, dentro de
+# un <script> de ajuste mensual, un objeto JS (no JSON: comillas simples y
+# claves sin comillas) con el resultado regional del Convenio de Desempeño
+# Colectivo: presupuesto vigente, devengado y meta por SEREMI. A diferencia
+# del CDC de DIPLAP, el panel presupuestario NO publica una serie mensual:
+# solo el corte vigente («resultado final agosto 2026» hoy), así que este
+# bloque no tiene «meses» ni variación contra el periodo anterior.
+def presupuesto_cdc(fuente):
+    texto = leer(fuente)
+    m = re.search(r"cdc:\{\s*budget:(\d+),dev:(\d+).*?rows:\[(.*?)\]\s*\}", texto, re.S)
+    if not m:
+        raise ValueError("el panel presupuestario ya no trae `cdc:{ budget, dev, rows:[...] }`")
+    budget_pub, dev_pub = int(m.group(1)), int(m.group(2))
+
+    tit = re.search(r"resultado final (\w+) (\d{4})", texto, re.I)
+    corte = ("%s-%02d" % (tit.group(2), MESES_ES.index(tit.group(1).lower()) + 1)) if tit else None
+
+    filas = [None] * len(REGIONES)
+    for _cita, nombre, presupuesto, devengado, pct, meta in re.findall(
+            r"\[(['\"])((?:(?!\1).)*)\1,([\d.]+),([\d.]+),([\d.]+),([\d.]+)\]", m.group(3)):
+        r = indice_region(nombre)
+        if r is None:
+            continue
+        filas[r] = {"r": r, "presupuesto": int(float(presupuesto)), "devengado": int(float(devengado)),
+                    "pct": round(float(pct), 4), "meta": round(float(meta), 4)}
+    faltan = [REGIONES[i][1] for i, f in enumerate(filas) if f is None]
+    if faltan:
+        raise ValueError("presupuesto CDC sin fila para: %s" % ", ".join(faltan))
+
+    # Igual que con el DCPR: la suma de las 16 SEREMIs tiene que dar el total
+    # que publica el panel, o no se escribe.
+    budget = sum(f["presupuesto"] for f in filas)
+    dev = sum(f["devengado"] for f in filas)
+    if budget != budget_pub or dev != dev_pub:
+        raise ValueError(
+            "presupuesto CDC: la suma de las 16 SEREMIs (%d / %d) no calza con el total publicado (%d / %d)"
+            % (budget, dev, budget_pub, dev_pub))
+
+    return {"origen": "presupuesto", "fuente": fuente, "corte": corte,
+            "budget": budget, "dev": dev, "filas": filas}
 
 
 # ------------------------------------------------------------- §2.3 catastro
@@ -439,6 +488,12 @@ def comprobar(p):
     exigir({f["r"] for f in cdc["filas"]} == set(range(nr)),
            "el detalle CDC no cubre las 16 SEREMIs")
 
+    pr = p["presupuesto"]
+    exigir(len(pr["filas"]) == nr, "presupuesto CDC sin una fila por SEREMI")
+    exigir(all(f["presupuesto"] > 0 for f in pr["filas"]), "presupuesto CDC con presupuesto vigente en cero")
+    exigir(sum(f["presupuesto"] for f in pr["filas"]) == pr["budget"],
+           "presupuesto CDC: el total no es la suma de las SEREMIs")
+
     d = p["dcpr"]
     exigir(len(d["meses"]) >= 2, "el DCPR trae menos de dos meses: no hay periodo anterior")
     exigir(d["titulos"]["entregados"][0][-1] is not None, "el DCPR no trae títulos del último mes")
@@ -500,6 +555,7 @@ def main():
         payload["regiones"] = [{"codigo": c, "nombre": n} for c, n in REGIONES]
         payload["cdc"] = cdc_diplap(os.environ.get("FUENTE_CDC", URL_CDC))
         payload["dcpr"] = dcpr(os.environ.get("FUENTE_DCPR", URL_DCPR))
+        payload["presupuesto"] = presupuesto_cdc(os.environ.get("FUENTE_PRESUPUESTO", URL_PRESUPUESTO))
         payload["generado"] = datetime.now().replace(microsecond=0).isoformat()
         comprobar(payload)
         tam = escribir(payload)
@@ -511,9 +567,9 @@ def main():
     if _SIN_MAPEO:
         print("AVISO: regiones sin código, descartadas: %s"
               % ", ".join(sorted(_SIN_MAPEO)), file=sys.stderr)
-    print("datos.js -> CDC a %s (%d indicadores), DCPR a %s, %.1f KB"
+    print("datos.js -> CDC a %s (%d indicadores), DCPR a %s, presupuesto CDC a %s, %.1f KB"
           % (payload["cdc"]["meses"][-1], len(payload["cdc"]["filas"]),
-             payload["dcpr"]["meses"][-1], tam / 1024))
+             payload["dcpr"]["meses"][-1], payload["presupuesto"]["corte"], tam / 1024))
     print("            oficios, catastro, gestión de Bienes y terreno: DATOS DE EJEMPLO")
     return 0
 
