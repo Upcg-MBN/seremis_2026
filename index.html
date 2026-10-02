@@ -125,9 +125,6 @@ button{font:inherit; color:inherit}
    scroll horizontal (si no, la página entera se desborda en el celular). */
 @media (min-width:1201px){
   .fila--toda .barras,.fila--toda .matriz-caja{overflow:visible}
-  /* El gráfico no se estira con la lista de 16 barras. */
-  .fila--toda > .tarjeta:has(.lienzo){align-self:flex-start}
-  .fila--toda .lienzo{flex:none; height:20rem}
   /* Resumen: la matriz manda la altura y las alertas hacen scroll dentro de ella. */
   .fila--toda .alertas{contain:size; flex:1 1 0}
 }
@@ -136,6 +133,7 @@ button{font:inherit; color:inherit}
 /* ---------- KPI ---------- */
 .kpis{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem}
 .kpis--5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.kpis--6{grid-template-columns:repeat(6,minmax(0,1fr))}
 .kpi{display:flex; flex-direction:column; gap:0.625rem}
 .kpi-rot{display:flex; align-items:center; gap:0.75rem; font-size:0.9375rem; color:var(--gris-60)}
 .kpi-rot .ico{color:var(--primario-darken-1)}
@@ -153,6 +151,10 @@ button{font:inherit; color:inherit}
    de la tarjeta. Mismo tipo y peso, tamaño menor. */
 .kpi-num--money{font-size:1.75rem}
 .kpi-pie{display:flex; align-items:center; gap:0.375rem; font-size:0.875rem; color:var(--gris-60)}
+/* Para una oración completa (p. ej. el % ya cerrado del rezago) en vez de la
+   fila corta «etiqueta: valor»: se necesita que el texto haga salto de línea
+   normal, no que se apriete en una sola fila flex. */
+.kpi-pie--texto{display:block; line-height:1.4}
 
 /* ---------- Tarjetas ---------- */
 .t-cab{display:flex; align-items:center; gap:0.5rem 1.25rem; flex-wrap:wrap}
@@ -160,12 +162,8 @@ button{font:inherit; color:inherit}
 .t-sub{margin:-0.75rem 0 0; max-width:90ch; font-size:0.875rem; color:var(--gris-60)}
 .leyenda{display:flex; flex-wrap:wrap; gap:0.375rem 1rem; font-size:0.875rem; color:var(--gris-60)}
 .leyenda span{display:flex; align-items:center; gap:0.5rem}
-.k-linea{width:1.25rem; height:3px; border-radius:2px}
 .k-caja{width:0.75rem; height:0.75rem; border-radius:2px}
 .k-punteada{width:1.25rem; height:0; border-top:2px dashed var(--gris-50)}
-.lienzo{position:relative; flex:1; min-height:18rem}
-.lienzo > svg{position:absolute; inset:0; display:block; overflow:visible}
-.lienzo:focus-visible{box-shadow:var(--focus-ring); border-radius:var(--radius-s)}
 .vacio{display:grid; place-items:center; height:100%; color:var(--gris-60); text-align:center; padding:2rem}
 
 /* ---------- Listas de barras ----------
@@ -194,7 +192,6 @@ button.barra-fila:hover{background:var(--gris-5)}
 .meta-tick--alerta{background:var(--chart-estado-alerta)}
 .meta-tick--critico{background:var(--error-darken-3)}
 .k-tick{width:2px; height:0.875rem; background:var(--gris-70)}
-.k-linea--meta{height:1px; background:var(--gris-50)}
 /* Apiladas: separación de 2 px en blanco entre tramos, sin pista gris debajo. */
 .pista--apilada{display:flex; gap:2px}
 .pista--apilada .relleno{border-radius:0}
@@ -211,6 +208,14 @@ button.barra-fila:hover{background:var(--gris-5)}
 .matriz td{padding:0.25rem 0.75rem; border-bottom:1px solid var(--gris-10)}
 .matriz tbody tr:nth-child(even){background:var(--gris-5)}
 .matriz tbody tr:hover{background:var(--secundario-base)}
+/* Fila, columna y celda clicables: fila filtra por la SEREMI, columna va a esa
+   sección, celda hace las dos cosas. `all:unset` para que el botón se vea como
+   el texto que reemplaza (hereda tamaño y color, incluido el blanco del
+   encabezado), no como un botón de formulario. */
+.matriz button{all:unset; display:block; width:100%; cursor:pointer}
+.matriz td button{display:flex; align-items:center}
+.matriz button:hover,.matriz button:focus-visible{text-decoration:underline}
+.matriz tbody th button:hover,.matriz tbody th button:focus-visible{color:var(--primario-darken-1)}
 /* El color de estado va en el ícono; la etiqueta, en tinta de texto. Como texto
    chico el ámbar da 3,19:1 y no pasa AA; como ícono (≥3:1) sí. */
 .sem{display:flex; align-items:center; gap:0.375rem; white-space:nowrap}
@@ -323,6 +328,43 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 .btn-sec{border:1px solid var(--gris-20); background:var(--blanco-base)}
 .btn-sec:hover{background:var(--gris-5)}
 
+/* ---------- Gestión de Bienes: combo de trámites y grupo de variable ---------- */
+/* Junto al chip de SEREMI en la barra de filtros: mismo tamaño que .chip
+   (max-width 18rem, alto 3rem), oculto salvo en Gestión de Bienes (irA()). */
+.ges-combo{position:relative; display:block; width:18rem; max-width:100%}
+/* [hidden] por sí solo no basta: una regla de autor con selector de clase
+   (como el display:block de arriba) le gana en la cascada al display:none
+   del user-agent para [hidden], aunque la especificidad sea la misma. */
+.ges-combo[hidden]{display:none}
+.ges-combo summary{display:flex; align-items:center; gap:0.625rem; width:100%; height:3rem; padding:0 1rem;
+  background:var(--blanco-base); border:1px solid var(--gris-20); border-radius:var(--radius-s);
+  font-size:1rem; cursor:pointer; list-style:none; user-select:none; box-sizing:border-box}
+.ges-combo summary::-webkit-details-marker{display:none}
+.ges-combo summary:hover{border-color:var(--gris-40)}
+.ges-combo[open] summary{border-color:var(--primario-darken-1)}
+.ges-combo summary > .ico:first-child{color:var(--primario-darken-1)}
+.ges-combo summary > span:nth-child(3){flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ges-combo .chip-flecha{position:static; margin-left:auto; transition:transform var(--duration-base) var(--ease-standard)}
+.ges-combo[open] .chip-flecha{transform:rotate(180deg)}
+.ges-combo-lista{position:absolute; z-index:20; top:calc(100% + 0.25rem); left:0; width:100%; box-sizing:border-box;
+  background:var(--blanco-base); border:1px solid var(--gris-20); border-radius:var(--radius-m);
+  box-shadow:var(--elevation-03); padding:0.5rem; display:flex; flex-direction:column; gap:0.125rem}
+.ges-combo-lista .opcion{font-size:0.9375rem}
+.ges-todos{font-weight:700}
+.ges-combo-sep{border:0; border-top:1px solid var(--gris-10); margin:0.25rem 0}
+/* Nombre de trámite clicleable en la tabla de detalle: misma letra que el
+   resto del <th>, pero con gesto de botón (como elegir SEREMI en una barra). */
+.btn-fila{display:block; width:100%; padding:0; border:0; background:none; font:inherit; color:inherit;
+  text-align:inherit; cursor:pointer}
+.btn-fila:hover{color:var(--primario-darken-1); text-decoration:underline}
+.btn-fila[aria-pressed="true"]{color:var(--primario-darken-1)}
+.ges-combo-lista small,.btn-fila + small{color:var(--gris-60)}
+.grupo-var{display:flex; gap:0.25rem}
+.grupo-var button{padding:0.375rem 0.875rem; border:1px solid var(--gris-20); border-radius:var(--radius-pill);
+  background:var(--blanco-base); font-size:0.8125rem; font-weight:500; color:var(--gris-70); cursor:pointer}
+.grupo-var button:hover{background:var(--gris-5)}
+.grupo-var button[aria-pressed="true"]{background:var(--primario-darken-1); border-color:var(--primario-darken-1); color:var(--blanco-base)}
+
 /* ---------- Tooltip ---------- */
 .tip{position:fixed; z-index:30; min-width:11.875rem; padding:0.625rem 0.75rem; background:var(--blanco-base); border-radius:var(--radius-m);
   box-shadow:var(--elevation-03); font-size:max(12px,0.8125rem); pointer-events:none}
@@ -338,14 +380,12 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   .contenido{overflow:auto}
   .fila{min-height:26rem}
   .fila:has(.tabla[open]){flex:none}
-  .fila:has(.tabla[open]) .lienzo{flex:none; height:20rem}
 }
 @media (max-width:1599px){.btn-largo{display:none}}
 @media (max-width:1300px){.rejilla{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:1200px){
   .fila{flex-direction:column; flex:none}
-  .lienzo{flex:none; height:24rem}
   .mapa-caja{flex:none; height:32rem}
   /* Las listas verticales pueden crecer, pero la matriz y las tablas anchas
      conservan su desplazamiento horizontal: sin esto, una tabla de 9 columnas
@@ -393,6 +433,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     background:none; display:grid; place-items:center; cursor:pointer}
   .hoja-listo{display:block; width:100%; min-height:3rem; position:sticky; bottom:0}
   .filtros-hoja .chip{flex:none; width:100%; max-width:none}
+  .filtros-hoja .ges-combo{width:100%}
   .filtros-hoja .enlace{align-self:flex-start}
   .kpis,.rejilla{grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.75rem}
   .tarjeta{padding:1rem}
@@ -405,7 +446,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   .kpi-pie{font-size:0.75rem; align-items:flex-start}
   .ind-num{font-size:1.375rem}
   .barra-fila{grid-template-columns:minmax(0,8rem) minmax(0,1fr) 4.25rem; gap:0.5rem}
-  .lienzo{height:20rem}
   .mapa-caja{height:26rem}
   .matriz{font-size:max(11px,0.75rem)}
   .matriz thead th,.matriz tbody th,.matriz td{padding:0.25rem 0.375rem}
@@ -450,6 +490,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 .informe .pagina,.informe .fila{display:flex; flex-direction:column; gap:5mm; flex:none}
 .informe .kpis{grid-template-columns:repeat(4,minmax(0,1fr)); gap:3mm}
 .informe .kpis--5{grid-template-columns:repeat(5,minmax(0,1fr)); gap:3mm}
+.informe .kpis--6{grid-template-columns:repeat(3,minmax(0,1fr)); gap:3mm}
 .informe .rejilla{grid-template-columns:repeat(3,minmax(0,1fr)); gap:3mm}
 .informe .tarjeta{box-shadow:none; border:1px solid var(--gris-10); padding:4mm 5mm; break-inside:avoid}
 .informe .tarjeta:has(.matriz),.informe .tarjeta:has(.tabla:not(.fuera)){break-inside:auto}
@@ -462,7 +503,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 .informe .t-cab h2{font-size:13pt}
 .informe .t-sub{margin:-2mm 0 0; font-size:9pt}
 .informe .leyenda{font-size:9pt}
-.informe .lienzo{flex:none; height:85mm; min-height:0; break-inside:avoid}
 .informe .mapa-caja{flex:none; height:150mm; min-height:0}
 .informe .escala{font-size:8.5pt}
 .informe .barras,.informe .alertas,.informe .minutas,.informe .matriz-caja,.informe .datos{flex:none; overflow:visible; max-height:none}
@@ -508,12 +548,13 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       </div>
       <button type="button" class="pag" data-pag="resumen" title="Resumen ejecutivo"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="dashboard"></svg><span class="txt">Resumen ejecutivo</span></button>
       <button type="button" class="pag" data-pag="cdc" title="Cumplimiento CDC"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="bandera"></svg><span class="txt">Cumplimiento CDC</span></button>
-      <button type="button" class="pag" data-pag="oficios" title="Respuesta a oficios"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="correo"></svg><span class="txt">Respuesta a oficios</span></button>
-      <button type="button" class="pag" data-pag="catastro" title="Gestión de catastro"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="mapa"></svg><span class="txt">Gestión de catastro</span></button>
-      <button type="button" class="pag" data-pag="gestion" title="Gestión de Bienes"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="casa"></svg><span class="txt">Gestión de Bienes</span></button>
-      <button type="button" class="pag" data-pag="dcpr" title="Gestión DCPR"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="documento"></svg><span class="txt">Gestión DCPR</span></button>
-      <button type="button" class="pag" data-pag="terreno" title="Gobierno en terreno"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="pin"></svg><span class="txt">Gobierno en terreno</span></button>
       <button type="button" class="pag" data-pag="presupuesto" title="Presupuesto"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="moneda"></svg><span class="txt">Presupuesto</span></button>
+      <button type="button" class="pag" data-pag="gestion" title="Gestión de Bienes"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="casa"></svg><span class="txt">Gestión de Bienes</span></button>
+      <button type="button" class="pag" data-pag="dcpr" title="Gestión Regularización"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="documento"></svg><span class="txt">Gestión Regularización</span></button>
+      <button type="button" class="pag" data-pag="convenios" title="Gestión de Convenios"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="personas"></svg><span class="txt">Gestión de Convenios</span></button>
+      <button type="button" class="pag" data-pag="catastro" title="Gestión de catastro"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="mapa"></svg><span class="txt">Gestión de catastro</span></button>
+      <button type="button" class="pag" data-pag="terreno" title="Gobierno en terreno"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="pin"></svg><span class="txt">Gobierno en terreno</span></button>
+      <button type="button" class="pag" data-pag="oficios" title="Respuesta a oficios"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="correo"></svg><span class="txt">Respuesta a oficios</span></button>
       <div class="menu-pie">
         <button type="button" id="abrir-glosario" title="Glosario y reglas de alerta"><svg class="ico ico--22" viewBox="0 0 24 24" aria-hidden="true" data-i="ayuda"></svg><span class="txt">Glosario y reglas</span></button>
       </div>
@@ -537,6 +578,18 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         <div class="filtros-hoja" id="f-hoja">
           <div class="hoja-cab"><h2>Filtros</h2><button type="button" id="f-cerrar" aria-label="Cerrar filtros"><svg class="ico ico--22" viewBox="0 0 24 24" aria-hidden="true" data-i="cerrar"></svg></button></div>
           <label class="chip"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="globo"></svg><span class="chip-rot">SEREMI:</span><select id="f-seremi"></select><svg class="ico chip-flecha" viewBox="0 0 24 24" aria-hidden="true" data-i="flecha"></svg></label>
+          <details class="ges-combo" id="ges-filtro" hidden>
+            <summary><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="filtro"></svg>
+              <span class="chip-rot">Trámites:</span><span id="ges-combo-resumen"></span>
+              <svg class="ico chip-flecha" viewBox="0 0 24 24" aria-hidden="true" data-i="flecha"></svg></summary>
+            <div class="ges-combo-lista" id="ges-combo-lista"></div>
+          </details>
+          <details class="ges-combo" id="mat-filtro" hidden>
+            <summary><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="filtro"></svg>
+              <span class="chip-rot">Materia:</span><span id="mat-combo-resumen"></span>
+              <svg class="ico chip-flecha" viewBox="0 0 24 24" aria-hidden="true" data-i="flecha"></svg></summary>
+            <div class="ges-combo-lista" id="mat-combo-lista"></div>
+          </details>
           <button type="button" class="enlace" id="f-reset"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="reiniciar"></svg>Ver todas</button>
           <button type="button" class="btn-pri hoja-listo" id="f-listo">Ver resultados</button>
         </div>
@@ -545,7 +598,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 
       <!-- ---------------------------------------------- Resumen ejecutivo -->
       <section class="pagina" id="p-resumen" aria-label="Resumen ejecutivo">
-        <div class="kpis kpis--5" id="kpis" data-sec="kpis"></div>
+        <div class="kpis kpis--6" id="kpis" data-sec="kpis"></div>
         <div class="fila fila--toda">
           <div class="tarjeta col ancho" data-sec="matriz">
             <div class="t-cab">
@@ -569,36 +622,128 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 
       <!-- ------------------------------------------------ Cumplimiento CDC -->
       <section class="pagina" id="p-cdc" aria-label="Cumplimiento CDC" hidden>
-        <div class="fila fila--toda">
-          <div class="tarjeta col ancho" data-sec="cdc-barras">
-            <div class="t-cab">
-              <h2 id="cdc-tit">Cumplimiento global por SEREMI</h2>
-              <div class="leyenda" aria-hidden="true">
-                <span><i class="k-punteada"></i>Umbral 90 %</span>
-              </div>
+        <div class="tarjeta col ancho" data-sec="cdc-barras">
+          <div class="t-cab">
+            <h2 id="cdc-tit">Cumplimiento global por SEREMI</h2>
+            <div class="leyenda" aria-hidden="true">
+              <span><i class="k-punteada"></i>Umbral 90 %</span>
             </div>
-            <p class="t-sub" id="cdc-sub"></p>
-            <div class="barras" id="cdc-barras"></div>
-            <details class="tabla" id="cdc-tabla" data-sec="cdc-tabla"></details>
           </div>
-          <div class="tarjeta col angosto" data-sec="cdc-serie">
-            <div class="t-cab">
-              <h2>Evolución mensual</h2>
-              <div class="leyenda" aria-hidden="true">
-                <span><i class="k-linea" style="background:var(--primario-darken-1)"></i>Cumplimiento global</span>
-                <span><i class="k-punteada"></i>Umbral 90 %</span>
-                <span><i class="k-linea k-linea--meta"></i>Meta 100 %</span>
-              </div>
-            </div>
-            <p class="t-sub" id="cdc-serie-sub"></p>
-            <div class="lienzo" id="cdc-serie"></div>
-            <details class="tabla" id="cdc-serie-tabla"></details>
-          </div>
+          <p class="t-sub" id="cdc-sub"></p>
+          <div class="barras" id="cdc-barras"></div>
+          <details class="tabla" id="cdc-tabla" data-sec="cdc-tabla"></details>
         </div>
         <div class="tarjeta col" data-sec="cdc-detalle">
           <div class="t-cab"><h2 id="cdc-det-tit">Indicadores bajo 90 %</h2></div>
           <p class="t-sub" id="cdc-det-sub"></p>
           <div class="datos" id="cdc-detalle"></div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------- Presupuesto -->
+      <section class="pagina" id="p-presupuesto" aria-label="Presupuesto" hidden>
+        <div class="kpis" id="pr-kpis" data-sec="pr-kpis"></div>
+        <div class="tarjeta col" data-sec="pr-tabla">
+          <div class="t-cab"><h2>Detalle por SEREMI</h2></div>
+          <p class="t-sub" id="pr-tabla-sub"></p>
+          <div class="datos" id="pr-tabla"></div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------- Gestión de Bienes -->
+      <section class="pagina" id="p-gestion" aria-label="Gestión de Bienes" hidden>
+        <div class="kpis" id="ges-kpis" data-sec="ges-kpis"></div>
+        <div class="tarjeta col" data-sec="ges-tabla">
+          <div class="t-cab"><h2 id="ges-tabla-tit">Detalle por trámite</h2></div>
+          <p class="t-sub" id="ges-tabla-sub"></p>
+          <div class="datos" id="ges-tabla"></div>
+        </div>
+        <div class="tarjeta col ancho" data-sec="ges-barras">
+          <div class="t-cab">
+            <h2 id="ges-barras-tit">Por SEREMI</h2>
+            <div class="grupo-var" id="ges-var" role="group" aria-label="Variable del gráfico">
+              <button type="button" data-var="ing" aria-pressed="true">Ingresados</button>
+              <button type="button" data-var="fin" aria-pressed="false">Finalizados</button>
+              <button type="button" data-var="moc" aria-pressed="false">Stock</button>
+            </div>
+            <div class="leyenda">
+              <span><i class="k-caja" id="ges-ley-color"></i><span id="ges-ley-actual"></span></span>
+              <span><i class="k-tick"></i><span id="ges-ley-anterior"></span></span>
+            </div>
+          </div>
+          <p class="t-sub" id="ges-barras-sub"></p>
+          <div class="barras" id="ges-barras"></div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------ Gestión Regularización -->
+      <section class="pagina" id="p-dcpr" aria-label="Gestión Regularización" hidden>
+        <div class="kpis kpis--6" id="dc-kpis" data-sec="dc-kpis"></div>
+        <div class="tarjeta col ancho" data-sec="dc-resol-barras">
+          <div class="t-cab">
+            <h2 id="dc-resol-tit">Resoluciones por SEREMI</h2>
+            <div class="grupo-var" id="dc-var" role="group" aria-label="Tipo de resolución">
+              <button type="button" data-var="resA" aria-pressed="true">Resolución A</button>
+              <button type="button" data-var="resB" aria-pressed="false">Resolución B</button>
+              <button type="button" data-var="resC" aria-pressed="false">Resolución C</button>
+            </div>
+            <div class="leyenda">
+              <span><i class="k-caja" id="dc-ley-color"></i><span id="dc-ley-actual"></span></span>
+              <span><i class="k-tick"></i><span id="dc-ley-anterior"></span></span>
+            </div>
+          </div>
+          <p class="t-sub" id="dc-resol-sub"></p>
+          <div class="barras" id="dc-resol"></div>
+          <details class="tabla" id="dc-resol-tabla" data-sec="dc-resol-tabla"></details>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------- Gestión de Convenios -->
+      <section class="pagina" id="p-convenios" aria-label="Gestión de Convenios" hidden>
+        <div class="kpis" id="cv-kpis" data-sec="cv-kpis"></div>
+        <div class="tarjeta col" data-sec="cv-tabla-ft">
+          <div class="t-cab">
+            <h2 id="cv-tabla-ft-tit">Convenios FT</h2>
+            <div class="grupo-var" id="cv-estado" role="group" aria-label="Estado del convenio">
+              <button type="button" data-estado="vigentes" aria-pressed="true">Vigentes</button>
+              <button type="button" data-estado="todas" aria-pressed="false">Todos</button>
+            </div>
+          </div>
+          <p class="t-sub" id="cv-tabla-ft-sub"></p>
+          <div class="datos" id="cv-tabla-ft"></div>
+        </div>
+        <div class="tarjeta col" data-sec="cv-tabla-tramite">
+          <div class="t-cab"><h2>Convenios en trámite</h2></div>
+          <p class="t-sub" id="cv-tabla-tramite-sub"></p>
+          <div class="datos" id="cv-tabla-tramite"></div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------ Gestión de catastro -->
+      <section class="pagina" id="p-catastro" aria-label="Gestión de catastro" hidden>
+        <div class="rejilla" id="cat-tarjetas" data-sec="cat-tarjetas"></div>
+        <div class="tarjeta col" data-sec="cat-tabla">
+          <div class="t-cab"><h2 id="cat-tit">Detalle por SEREMI</h2></div>
+          <p class="t-sub">Tenencia como en el informe de Catastro: administradas por el Ministerio (sin acto de administración), con acto de administración vigente (entregadas a terceros) y parcialmente administradas (tenencia mixta); las tres suman el total de UC. Las dos primeras se comparan con el propio trimestre anterior de cada SEREMI. El porcentaje nacional es composición, no ranking. Orden norte a sur.</p>
+          <div class="datos" id="cat-tabla"></div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------- Gobierno en terreno -->
+      <section class="pagina" id="p-terreno" aria-label="Gobierno en terreno" hidden>
+        <div class="fila">
+          <div class="tarjeta col ancho" data-sec="ter-mapa">
+            <div class="t-cab"><h2>Salidas a terreno por región</h2></div>
+            <p class="t-sub" id="ter-sub"></p>
+            <div class="mapa-caja" id="mapa"></div>
+            <div class="escala" id="escala"></div>
+            <details class="tabla" id="ter-tabla" data-sec="ter-tabla"></details>
+          </div>
+          <div class="tarjeta col angosto" data-sec="ter-minutas">
+            <div class="t-cab"><h2 id="ter-min-tit">Minutas de la última quincena</h2></div>
+            <p class="t-sub" id="ter-min-sub"></p>
+            <div class="minutas" id="minutas"></div>
+          </div>
         </div>
       </section>
 
@@ -626,82 +771,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         </div>
       </section>
 
-      <!-- ------------------------------------------------ Gestión de catastro -->
-      <section class="pagina" id="p-catastro" aria-label="Gestión de catastro" hidden>
-        <div class="rejilla" id="cat-tarjetas" data-sec="cat-tarjetas"></div>
-        <div class="tarjeta col" data-sec="cat-tabla">
-          <div class="t-cab"><h2 id="cat-tit">Detalle por SEREMI</h2></div>
-          <p class="t-sub">Tenencia como en el informe de Catastro: administradas por el Ministerio (sin acto de administración), con acto de administración vigente (entregadas a terceros) y parcialmente administradas (tenencia mixta); las tres suman el total de UC. Las dos primeras se comparan con el propio trimestre anterior de cada SEREMI. El porcentaje nacional es composición, no ranking. Orden norte a sur.</p>
-          <div class="datos" id="cat-tabla"></div>
-        </div>
-      </section>
-
-      <!-- ------------------------------------------------- Gestión de Bienes -->
-      <section class="pagina" id="p-gestion" aria-label="Gestión de Bienes" hidden>
-        <div class="tarjeta col" data-sec="ges-top">
-          <div class="t-cab"><h2 id="ges-tit">Trámites más gestionados</h2></div>
-          <p class="t-sub" id="ges-sub"></p>
-          <div class="datos" id="ges-tabla"></div>
-        </div>
-      </section>
-
-      <!-- ------------------------------------------------------ Gestión DCPR -->
-      <section class="pagina" id="p-dcpr" aria-label="Gestión DCPR" hidden>
-        <div class="kpis kpis--5" id="dc-kpis" data-sec="dc-kpis"></div>
-        <div class="fila fila--toda">
-          <div class="tarjeta col ancho" data-sec="dc-tram">
-            <div class="t-cab">
-              <h2 id="dc-tram-tit">Solicitudes tramitadas por SEREMI</h2>
-              <div class="leyenda">
-                <span><i class="k-caja" style="background:var(--chart-1)"></i>Positivas (ingreso CBR)</span>
-                <span><i class="k-caja" style="background:var(--chart-2)"></i>Negativas</span>
-                <span><i class="k-caja" style="background:var(--chart-3)"></i>Enviadas a tribunales</span>
-              </div>
-            </div>
-            <p class="t-sub" id="dc-tram-sub"></p>
-            <div class="barras" id="dc-tram"></div>
-          </div>
-          <div class="tarjeta col angosto" data-sec="dc-tit">
-            <div class="t-cab"><h2>Títulos entregados por SEREMI</h2></div>
-            <p class="t-sub" id="dc-tit-sub"></p>
-            <div class="barras barras--angosta" id="dc-tit"></div>
-          </div>
-        </div>
-        <div class="tarjeta col" data-sec="dc-tabla">
-          <div class="t-cab"><h2>Detalle por SEREMI</h2></div>
-          <p class="t-sub" id="dc-tabla-sub"></p>
-          <div class="datos" id="dc-tabla"></div>
-        </div>
-      </section>
-
-      <!-- ------------------------------------------------- Gobierno en terreno -->
-      <section class="pagina" id="p-terreno" aria-label="Gobierno en terreno" hidden>
-        <div class="fila">
-          <div class="tarjeta col ancho" data-sec="ter-mapa">
-            <div class="t-cab"><h2>Salidas a terreno por región</h2></div>
-            <p class="t-sub" id="ter-sub"></p>
-            <div class="mapa-caja" id="mapa"></div>
-            <div class="escala" id="escala"></div>
-            <details class="tabla" id="ter-tabla" data-sec="ter-tabla"></details>
-          </div>
-          <div class="tarjeta col angosto" data-sec="ter-minutas">
-            <div class="t-cab"><h2 id="ter-min-tit">Minutas de la última quincena</h2></div>
-            <p class="t-sub" id="ter-min-sub"></p>
-            <div class="minutas" id="minutas"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ------------------------------------------------------- Presupuesto -->
-      <section class="pagina" id="p-presupuesto" aria-label="Presupuesto" hidden>
-        <div class="kpis" id="pr-kpis" data-sec="pr-kpis"></div>
-        <div class="tarjeta col" data-sec="pr-tabla">
-          <div class="t-cab"><h2>Detalle por SEREMI</h2></div>
-          <p class="t-sub" id="pr-tabla-sub"></p>
-          <div class="datos" id="pr-tabla"></div>
-        </div>
-      </section>
-
       <!-- Solo para el informe PDF: en pantalla el glosario es el diálogo. -->
       <section class="pagina" id="p-glosario" aria-label="Glosario y reglas de alerta" hidden>
         <div class="tarjeta" data-sec="glosario"><dl class="glo-imp" id="glo-imp"></dl></div>
@@ -722,7 +791,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     <div class="dlg-cab"><h2 id="pdf-tit">Exportar informe PDF</h2>
       <button type="button" id="cerrar-pdf" aria-label="Cerrar"><svg class="ico ico--22" viewBox="0 0 24 24" aria-hidden="true" data-i="cerrar"></svg></button></div>
     <div class="dlg-cuerpo">
-      <p class="dlg-nota">Elige qué incluir. El informe usa el filtro actual. Oficios, catastro, gestión de Bienes y gobierno en terreno todavía son datos de ejemplo y salen rotulados así. En la ventana de impresión, elige «Guardar como PDF».</p>
+      <p class="dlg-nota">Elige qué incluir. El informe usa el filtro actual. Oficios, catastro y gobierno en terreno todavía son datos de ejemplo y salen rotulados así. En la ventana de impresión, elige «Guardar como PDF».</p>
       <fieldset><legend>Resumen ejecutivo</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="kpis" checked>Indicadores principales</label>
         <label class="opcion"><input type="checkbox" name="sec" value="matriz" checked>Estado por SEREMI y dimensión</label>
@@ -731,33 +800,39 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       <fieldset><legend>Cumplimiento CDC</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="cdc-barras" checked>Cumplimiento global por SEREMI</label>
         <label class="opcion"><input type="checkbox" name="sec" value="cdc-tabla">Tabla de datos del cumplimiento</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="cdc-serie">Evolución mensual</label>
         <label class="opcion"><input type="checkbox" name="sec" value="cdc-detalle" checked>Indicadores bajo 90 %</label>
       </fieldset>
-      <fieldset><legend>Oficios</legend>
-        <label class="opcion"><input type="checkbox" name="sec" value="of-kpis">Indicadores de respuesta</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="of-barras">Días de respuesta por SEREMI</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="of-pend">Oficios sin responder</label>
+      <fieldset><legend>Presupuesto</legend>
+        <label class="opcion"><input type="checkbox" name="sec" value="pr-kpis" checked>Indicadores de ejecución</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="pr-tabla" checked>Detalle por SEREMI</label>
       </fieldset>
-      <fieldset><legend>Catastro y gestión</legend>
+      <fieldset><legend>Gestión de Bienes</legend>
+        <label class="opcion"><input type="checkbox" name="sec" value="ges-kpis" checked>Indicadores de ingreso, finalizados, stock y rezago</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="ges-tabla" checked>Detalle por trámite</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="ges-barras">Gráfico por SEREMI</label>
+      </fieldset>
+      <fieldset><legend>Gestión Regularización</legend>
+        <label class="opcion"><input type="checkbox" name="sec" value="dc-kpis" checked>Indicadores</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="dc-resol-barras" checked>Resoluciones por SEREMI</label>
+      </fieldset>
+      <fieldset><legend>Gestión de Convenios</legend>
+        <label class="opcion"><input type="checkbox" name="sec" value="cv-kpis" checked>Indicadores</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="cv-tabla-ft" checked>Convenios FT</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="cv-tabla-tramite" checked>Convenios en trámite</label>
+      </fieldset>
+      <fieldset><legend>Catastro</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="cat-tarjetas">Indicadores de catastro</label>
         <label class="opcion"><input type="checkbox" name="sec" value="cat-tabla">Catastro: detalle por SEREMI</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="ges-top">Gestión de Bienes: trámites más gestionados</label>
-      </fieldset>
-      <fieldset><legend>Gestión DCPR</legend>
-        <label class="opcion"><input type="checkbox" name="sec" value="dc-kpis" checked>Indicadores DCPR</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="dc-tram">Solicitudes tramitadas por SEREMI</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="dc-tit">Títulos entregados por SEREMI</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="dc-tabla" checked>Detalle por SEREMI</label>
       </fieldset>
       <fieldset><legend>Gobierno en terreno</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="ter-mapa">Mapa de salidas a terreno</label>
         <label class="opcion"><input type="checkbox" name="sec" value="ter-tabla">Tabla de salidas por región</label>
         <label class="opcion"><input type="checkbox" name="sec" value="ter-minutas">Minutas de la última quincena</label>
       </fieldset>
-      <fieldset><legend>Presupuesto</legend>
-        <label class="opcion"><input type="checkbox" name="sec" value="pr-kpis" checked>Indicadores de ejecución</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="pr-tabla" checked>Detalle por SEREMI</label>
+      <fieldset><legend>Oficios</legend>
+        <label class="opcion"><input type="checkbox" name="sec" value="of-kpis">Indicadores de respuesta</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="of-barras">Días de respuesta por SEREMI</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="of-pend">Oficios sin responder</label>
       </fieldset>
       <fieldset><legend>Referencia</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="glosario" checked>Glosario y reglas de alerta</label>
@@ -825,9 +900,12 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
                'septiembre', 'octubre', 'noviembre', 'diciembre'];
   function num(n) { return Math.round(n || 0).toLocaleString('es-CL'); }
   function money(n) { return 'M$ ' + num(n); }
+  // Convenios trae el monto en pesos (no en miles como el resto del panel):
+  // con money() un convenio de $20.000.000 se habría leído como M$ 20.000.000,
+  // mil veces de más. Mismo signo que usa la propia planilla.
+  function pesos(n) { return n === null || n === undefined ? '—' : '$ ' + num(n); }
   function dec(n, d) { return (n === null || n === undefined) ? '—' : Number(n).toLocaleString('es-CL', { minimumFractionDigits: d, maximumFractionDigits: d }); }
   function mesDe(k) { return MESES[+k.slice(5, 7) - 1]; }
-  function mesCorto(k) { var m = mesDe(k); return m.charAt(0).toUpperCase() + m.slice(1, 3); }
   function mesLargo(k) { return mesDe(k) + ' de ' + k.slice(0, 4); }
   function fecha(iso) { return iso.slice(8, 10) + '-' + iso.slice(5, 7) + '-' + iso.slice(0, 4); }
   function fechaHora(iso) {
@@ -895,9 +973,18 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     if (dias > DIAS_FRESCO) {
       e.className = 'estado estado--alerta';
       e.innerHTML = ico('alerta') + 'Los datos tienen ' + dias + ' días: la carga no se ha actualizado.';
+      e.removeAttribute('title');
+    } else if (pagina === 'resumen') {
+      // El Resumen mezcla ocho fuentes: una sola línea ya no alcanza. En vez
+      // de alargar la barra, el detalle por sección va en el tooltip nativo
+      // (se ve al pasar el cursor), con un rótulo corto siempre visible.
+      e.className = 'estado';
+      e.innerHTML = ico('calendario') + 'Corte por sección (pasa el cursor para el detalle)';
+      e.title = cortesPorSeccion();
     } else {
       e.className = 'estado';
-      e.innerHTML = ico('calendario') + cortes();
+      e.innerHTML = ico('calendario') + estadoPagina();
+      e.removeAttribute('title');
     }
   }
   function cortes() {
@@ -905,55 +992,126 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     return c === d ? 'CDC y DCPR a ' + mesLargo(c) : 'CDC a ' + mesLargo(c) + ' · DCPR a ' + mesLargo(d);
   }
 
-  // Aviso de datos de ejemplo, según la página. CDC y DCPR son cifras reales.
+  // Fuente y corte de la página que se está mirando, no un resumen fijo de
+  // CDC/DCPR que no cambiaba al moverse a Presupuesto, Gestión de Bienes o
+  // Gestión de Convenios. Las tres páginas sin fuente real lo dicen explícito,
+  // en vez de mostrar una fecha que no es de nadie.
+  function estadoPagina() {
+    switch (pagina) {
+      case 'cdc':
+        return 'Fuente: Panel de Gestión Institucional 2026 (DIPLAP) · Corte: ' + mesLargo(ultimo(D.cdc.meses));
+      case 'presupuesto':
+        return 'Fuente: Panel Presupuestario MBN (Depto. de Presupuesto) · Corte: ' + mesLargo(D.presupuesto.corte);
+      case 'gestion':
+        return 'Fuente: Panel-Autoridades · Corte: ' + mesLargo(D.gestion.mes_parcial);
+      case 'dcpr':
+        return 'Fuente: Panel de Gestión Mensual DCPR · Corte: ' + mesLargo(ultimo(D.dcpr.meses));
+      case 'convenios':
+        return 'Fuente: Base_Convenios.xlsx (U. Convenios) · Corte: ' +
+          (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte en la planilla');
+      case 'catastro':
+        return 'Catastro: no tenemos disponibilizada la fuente real. Los datos de esta página son de ejemplo.';
+      case 'terreno':
+        return 'Gobierno en terreno: la fuente no cuenta con datos reales. Los datos de esta página son de ejemplo.';
+      case 'oficios':
+        return 'Respuesta a oficios: la fuente no cuenta con datos reales. Los datos de esta página son de ejemplo.';
+      default:
+        return cortes();
+    }
+  }
+
+  // Detalle por sección para el tooltip del Resumen: una línea por fuente,
+  // en el mismo orden que las tarjetas y la matriz.
+  function cortesPorSeccion() {
+    return [
+      'CDC: ' + mesLargo(ultimo(D.cdc.meses)) + ' · DIPLAP',
+      'Presupuesto: ' + mesLargo(D.presupuesto.corte) + ' · Panel Presupuestario',
+      'Bienes: ' + mesLargo(D.gestion.mes_parcial) + ' · Panel-Autoridades',
+      'Regularización: ' + mesLargo(ultimo(D.dcpr.meses)) + ' · Panel de Gestión Mensual DCPR',
+      'Convenios: ' + (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte') + ' · Base_Convenios.xlsx (U. Convenios)',
+      'Catastro: sin fuente real, datos de ejemplo',
+      'Gobierno en terreno: sin fuente real, datos de ejemplo',
+      'Oficios: sin fuente real, datos de ejemplo'
+    ].join('\n');
+  }
+
+  // Todas las fuentes del panel, reales y de ejemplo, para el aviso de
+  // «datos mixtos» del Resumen — más completa que DIMENSIONES, que son solo
+  // las cinco del semáforo (Presupuesto y Convenios quedan fuera de él, pero
+  // igual son fuentes reales que hay que nombrar acá).
+  var FUENTES_TODAS = [
+    ['cdc', 'CDC'], ['presupuesto', 'Presupuesto'], ['gestion', 'Bienes'],
+    ['dcpr', 'Regularización'], ['convenios', 'Convenios'],
+    ['oficios', 'Oficios'], ['catastro', 'Catastro'], ['terreno', 'Gobierno en terreno']
+  ];
+  // «A, B, C y D», no «A y B y C y D».
+  function listaY(a) {
+    return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1];
+  }
+
+  // Aviso de datos de ejemplo, según la página.
   function pintarAviso() {
-    var demo = DIMENSIONES.filter(function (d) { return esDemo(d[0]); }).map(function (d) { return d[1]; });
+    var demo = FUENTES_TODAS.filter(function (d) { return esDemo(d[0]); }).map(function (d) { return d[1]; });
+    var reales = FUENTES_TODAS.filter(function (d) { return !esDemo(d[0]); }).map(function (d) { return d[1]; });
     var txt = '';
     if (pagina === 'resumen' && demo.length) {
-      txt = '<b>Datos mixtos.</b> ' + DIMENSIONES.filter(function (d) { return !esDemo(d[0]); })
-        .map(function (d) { return d[1]; }).join(' y ') + ' son cifras reales. ' + demo.join(', ') +
-        ' todavía usan datos de ejemplo, inventados: su columna va marcada «ejemplo» y no sirve para decidir nada.';
+      txt = '<b>Datos mixtos.</b> ' + listaY(reales) + ' son cifras reales. ' + listaY(demo) +
+        ' todavía usan datos de ejemplo, inventados: no sirven para decidir nada.';
     } else if (esDemo(pagina)) {
-      txt = '<b>Datos de ejemplo.</b> Esta página todavía no tiene fuente real: las cifras son inventadas y sirven para revisar la estructura. No se usan para decidir nada.' +
-        (pagina === 'gestion' ? ' Falta además definir qué se mide como gestión de Bienes: casos con actos dictados (planilla manual de DBN) o casos finalizados en el sistema (base GXP).' : '');
+      txt = '<b>Datos de ejemplo.</b> Esta página todavía no tiene fuente real: las cifras son inventadas y sirven para revisar la estructura. No se usan para decidir nada.';
     }
     $('aviso-demo').hidden = !txt;
     $('aviso-txt').innerHTML = txt;
   }
 
   // ------------------------------------------------------ resumen ejecutivo
+  // Seis tarjetas, una por fuente real (ver pintarAviso): CDC, Presupuesto,
+  // Rezago de Bienes, Títulos entregados, Convenios vigentes y UC con acto de
+  // administración vigente (esta última de Catastro, que sigue con datos de
+  // ejemplo — el aviso de la página ya lo advierte, no se repite en la
+  // tarjeta). Cada cifra es la misma que su propia página calcula, solo que
+  // en el formato compacto del Resumen.
   function pintarKpis() {
-    // El conteo en rojo sale SOLO de dimensiones con datos reales: lo de ejemplo
-    // se informa aparte y no puede inflar la cifra que se cita en una reunión.
-    var rs = regiones(), reales = DIMENSIONES.filter(function (d) { return !esDemo(d[0]); });
-    var ejemplo = DIMENSIONES.filter(function (d) { return esDemo(d[0]); });
-    var hay = function (dims, r, e) { return dims.some(function (d) { return SEM[r].celdas[d[0]] === e; }); };
-    var criticas = 0, alertadas = 0, soloEjemplo = 0;
-    rs.forEach(function (r) {
-      if (hay(reales, r, 'critico')) criticas++;
-      else if (hay(reales, r, 'alerta')) alertadas++;
-      if (!hay(reales, r, 'critico') && hay(ejemplo, r, 'critico')) soloEjemplo++;
-    });
-    var dimsCriticas = filtro.r === null ? 0 : reales.filter(function (d) { return SEM[filtro.r].celdas[d[0]] === 'critico'; }).length;
+    var rs = regiones();
     var c = AGG.cdc(D, filtro.r), ec = AGG.estadoCumpl(c.global);
     var dc = AGG.dcpr(D, filtro.r);
     var pr = AGG.presupuesto(D, filtro.r);
+    var cod = filtro.r === null ? null : D.regiones[filtro.r].codigo;
+
+    var ges = AGG.bienes(D, { region: cod, tramites: null });
+    var rezagoBase = ges.kpi.rezago.base, rezagoAct = ges.kpi.rezago.actual;
+    var pctCerrado = rezagoBase ? (rezagoBase - rezagoAct) / rezagoBase : null;
+    var colorCerrado = pctCerrado === null ? null
+      : pctCerrado < 0.75 ? '--error-darken-3' : pctCerrado < 0.90 ? '--chart-estado-alerta' : '--exito-darken-3';
+    var pctCerradoTxt = colorCerrado
+      ? '<b style="color:var(' + colorCerrado + ')">' + pct(pctCerrado, 0) + '</b>' : pct(pctCerrado, 0);
+    var textoRezago = rezagoAct === null ? 'Sin datos a diciembre de 2025.'
+      : !rezagoBase ? 'No había casos en rezago al 31-12-2025.'
+      : 'Se ha finalizado un ' + pctCerradoTxt + ' de los ' + num(rezagoBase) + ' casos rezagados.';
+
+    var cv = AGG.convenios(D, { region: cod, materias: null });
+
+    var ucActual = 0, ucAnterior = 0;
+    rs.forEach(function (r) {
+      var f = AGG.catastro(D, r)[3];
+      ucActual += f.actual;
+      ucAnterior += (f.anterior === null ? 0 : f.anterior);
+    });
+    var trisCat = D.catastro.trimestres, previoCat = trisCat.length > 1 ? trisCat[trisCat.length - 2] : 'periodo anterior';
 
     var tarjetas = [
       ['bandera', 'Cumplimiento CDC', COLOR[ec], pct(c.global),
        '<div class="kpi-pie">' + ESTADO[ec].rot + ' · a ' + mesLargo(ultimo(D.cdc.meses)) + ', DIPLAP</div>'],
-      ['documento', 'Títulos entregados en 2026', '', num(dc.titulos.actual),
-       '<div class="kpi-pie">' + desde(dc.titulos) + '</div>'],
-      ['documento', 'Solicitudes tramitadas en 2026', '', num(dc.tramitadas.actual),
-       '<div class="kpi-pie">' + desde(dc.tramitadas) + '</div>'],
       ['moneda', 'Ejecución presupuestaria CDC', '', pct(pr.pct),
        '<div class="kpi-pie">Corte ' + mesLargo(D.presupuesto.corte) + ', Panel Presupuestario</div>'],
-      filtro.r === null
-        ? ['alerta', 'SEREMIs en rojo con datos reales', criticas ? 'rojo' : 'verde', num(criticas),
-           '<div class="kpi-pie">' + num(alertadas) + ' más en alerta, de ' + num(rs.length) + '</div>' +
-           (soloEjemplo ? '<div class="kpi-pie">+' + num(soloEjemplo) + ' en rojo solo por datos de ejemplo</div>' : '')]
-        : ['alerta', 'Dimensiones en rojo con datos reales', dimsCriticas ? 'rojo' : 'verde', num(dimsCriticas),
-           '<div class="kpi-pie">de ' + reales.length + ' con fuente real (' + reales.map(function (d) { return d[1]; }).join(', ') + ')</div>']
+      ['reloj', 'Rezago de Bienes', '', rezagoAct === null ? '—' : num(rezagoAct),
+       '<div class="kpi-pie kpi-pie--texto">' + textoRezago + '</div>'],
+      ['documento', 'Títulos entregados en 2026', '', num(dc.titulos.actual),
+       '<div class="kpi-pie">' + desde(dc.titulos) + '</div>'],
+      ['documento', 'Convenios vigentes', '', num(cv.kpi.vigentes),
+       '<div class="kpi-pie">' + (D.convenios.corte ? 'Corte ' + fecha(D.convenios.corte) : 'Base_Convenios.xlsx') + '</div>'],
+      ['mapa', 'UC con acto de administración vigente', '', num(ucActual),
+       '<div class="kpi-pie">' + celdaVar(AGG.variacion(ucActual, ucAnterior), REGLA_TRIM) + ' vs. ' + previoCat + '</div>']
     ];
     $('kpis').innerHTML = tarjetas.map(function (t) {
       var c = t[2] ? ' kpi-rot--' + t[2] : '', n = t[2] ? ' kpi-num--' + t[2] : '';
@@ -965,7 +1123,11 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     }).join('');
   }
 
-  // [clave de la celda y del bloque de datos.js, rótulo]
+  // [clave de la celda y del bloque de datos.js, rótulo] — las cinco
+  // dimensiones del documento, usadas por el semáforo, las alertas y el aviso
+  // de «datos mixtos». Oficios no entra a la tabla «Estado por SEREMI y
+  // dimensión» del Resumen (ver MATRIZ_DIMS abajo), pero sigue siendo una
+  // dimensión real para el semáforo y las alertas.
   var DIMENSIONES = [
     ['cdc', 'CDC'], ['oficios', 'Oficios'], ['catastro', 'Catastro'],
     ['gestion', 'Bienes'], ['dcpr', 'DCPR'], ['terreno', 'Terreno']
@@ -975,22 +1137,81 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     return d && esDemo(d[0]) ? rot + ' · ejemplo' : rot;
   }
 
+  // Columnas de la tabla «Estado por SEREMI y dimensión»: no son las mismas
+  // cinco del semáforo (agrega Presupuesto y Convenios, que están fuera de
+  // él; saca Oficios). Convenios no tiene umbral de alerta acordado (fuente
+  // nueva) y Catastro sigue con datos de ejemplo: ambas van con un ícono
+  // «informativo» en vez de un estado bueno/alerta/crítico, para no sugerir
+  // una lectura de semáforo que no está definida o que vendría de una cifra
+  // inventada. G. en terreno sí usa el semáforo real, pero también es dato de
+  // ejemplo: lleva la etiqueta igual, sin el ícono informativo (el estado SÍ
+  // está definido, solo que con datos inventados). `pag` es la página a la
+  // que lleva el clic en el encabezado o en una celda.
+  var MATRIZ_DIMS = [
+    { rot: 'CDC', pag: 'cdc', estado: function (r) { return SEM[r].celdas.cdc; } },
+    { rot: 'Presupuesto', pag: 'presupuesto', estado: function (r) {
+        var f = D.presupuesto.filas[r];
+        return f.pct >= f.meta ? 'bueno' : 'alerta';
+      } },
+    { rot: 'Bienes', pag: 'gestion', estado: function (r) { return SEM[r].celdas.gestion; } },
+    { rot: 'Regularización', pag: 'dcpr', estado: function (r) { return SEM[r].celdas.dcpr; } },
+    { rot: 'Convenios', pag: 'convenios', info: true },
+    { rot: 'Catastro', pag: 'catastro', info: true, demo: true },
+    { rot: 'G. en terreno', pag: 'terreno', estado: function (r) { return SEM[r].celdas.terreno; }, demo: true }
+  ];
+  function celdaInfo() {
+    return '<span class="sem" title="Informativo: sin umbral de alerta definido para esta dimensión.">' +
+      ico('info', 'ico--16') + '<span class="sem-rot">Informativo</span></span>';
+  }
+  function etiquetasDim(d) {
+    var e = [];
+    if (d.info) e.push('informativo');
+    if (d.demo) e.push('ejemplo');
+    return e.length ? '<span class="th-ej">' + e.join(' · ') + '</span>' : '';
+  }
+
+  // Tres gestos, los tres reconstruyen la tabla (pintar() o irA() la vuelven
+  // a dibujar), así que se delegan una sola vez sobre el documento, igual que
+  // el resto de las barras clicables del panel:
+  //   fila (SEREMI)      → filtra el panel por esa SEREMI, se queda en Resumen.
+  //   encabezado (dimensión) → va a esa sección, sin tocar el filtro.
+  //   celda (SEREMI × dimensión) → filtra por esa SEREMI Y va a esa sección.
   function pintarMatriz() {
     var filas = regiones().map(function (r) {
-      var f = SEM[r];
-      return '<tr><th scope="row">' + esc(f.nombre) + '</th>' +
-        DIMENSIONES.map(function (d) {
-          return '<td aria-label="' + d[1] + ': ' + ESTADO[f.celdas[d[0]]].rot + '">' + sem(f.celdas[d[0]]) + '</td>';
+      var reg = D.regiones[r];
+      return '<tr><th scope="row"><button type="button" class="matriz-seremi" data-cod="' + reg.codigo +
+        '" aria-pressed="' + (filtro.r === r) + '" title="Filtrar por ' + esc(reg.nombre) + '">' + esc(reg.nombre) + '</button></th>' +
+        MATRIZ_DIMS.map(function (d) {
+          if (d.info) return '<td><button type="button" class="matriz-celda" data-cod="' + reg.codigo + '" data-pag="' + d.pag +
+            '" aria-label="' + esc(reg.nombre) + ' · ' + d.rot + ': informativo, sin umbral de alerta definido. Filtrar e ir a ' + d.rot + '.">' +
+            celdaInfo() + '</button></td>';
+          var e = d.estado(r);
+          return '<td><button type="button" class="matriz-celda" data-cod="' + reg.codigo + '" data-pag="' + d.pag +
+            '" aria-label="' + esc(reg.nombre) + ' · ' + d.rot + ': ' + ESTADO[e].rot + '. Filtrar e ir a ' + d.rot + '.">' +
+            sem(e) + '</button></td>';
         }).join('') + '</tr>';
     }).join('');
     $('matriz').innerHTML =
       '<table class="matriz"><caption class="sr-only">Estado de cada SEREMI por dimensión</caption>' +
       '<thead><tr><th scope="col">SEREMI</th>' +
-      DIMENSIONES.map(function (d) {
-        return '<th scope="col">' + d[1] + (esDemo(d[0]) ? '<span class="th-ej">ejemplo</span>' : '') + '</th>';
+      MATRIZ_DIMS.map(function (d) {
+        return '<th scope="col"><button type="button" class="matriz-dim" data-pag="' + d.pag + '" title="Ir a ' + esc(d.rot) + '">' +
+          d.rot + etiquetasDim(d) + '</button></th>';
       }).join('') +
       '</tr></thead><tbody>' + filas + '</tbody></table>';
   }
+  document.addEventListener('click', function (ev) {
+    var celda = ev.target.closest('button.matriz-celda');
+    if (celda) {
+      elegirRegionPorCodigoExacta(celda.getAttribute('data-cod'));
+      irA(celda.getAttribute('data-pag'), true);
+      return;
+    }
+    var dim = ev.target.closest('button.matriz-dim');
+    if (dim) { irA(dim.getAttribute('data-pag'), true); return; }
+    var ser = ev.target.closest('button.matriz-seremi');
+    if (ser) { elegirRegionPorCodigo(ser.getAttribute('data-cod')); }
+  });
 
   function pintarAlertas() {
     // Primero las que salen de datos reales; las de ejemplo, plegadas debajo.
@@ -1053,70 +1274,17 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       ' Medición a ' + mes + '. Cumplimiento = avance efectivo ÷ meta del periodo.';
     var previa = null;
     $('cdc-detalle').innerHTML = lista.length ? tablaHtml(
-      (todas ? ['SEREMI'] : []).concat(['Indicador', 'Pond.', 'Meta al periodo', 'Avance', 'Cumplimiento', 'Análisis de causa']),
+      (todas ? ['SEREMI'] : []).concat(['Indicador', 'Pond.', 'Meta anual', 'Meta al periodo', 'Avance', 'Cumplimiento', 'Análisis de causa']),
       lista.map(function (f) {
         var e = AGG.estadoCumpl(f.cumpl);
-        var fila = [esc(f.indicador), pct(f.pond, 0), pct(f.meta),
+        var fila = [esc(f.indicador), pct(f.pond, 0), pct(f.metaAnual), pct(f.meta),
           pct(f.avance) + '<small style="display:block;color:var(--gris-60)">' + dec(f.num, 0) + ' de ' + dec(f.den, 0) + '</small>',
           '<span class="sem sem--' + e + '" style="justify-content:flex-end" title="' + ESTADO[e].rot + '">' + ico(ESTADO[e].ico, 'ico--16') + pct(f.cumpl) + '</span>',
           f.causa ? esc(f.causa) : '<span style="color:var(--gris-60)">Sin análisis de causa</span>'];
         if (todas) { fila.unshift(f.r === previa ? '' : esc(D.regiones[f.r].nombre)); previa = f.r; }
         return fila;
-      }), true, todas ? [1, 6] : [5])
+      }), true, todas ? [1, 7] : [6])
       : '<p class="vacio">Todos los indicadores del CDC están en ' + umbral + ' o más.</p>';
-
-    $('cdc-serie-sub').textContent = seremiNombre() + ' · ' + mesLargo(D.cdc.meses[0]) + ' a ' + mes;
-    tablaDe($('cdc-serie-tabla'), 'Ver tabla de datos', ['Mes', 'Cumplimiento global'],
-      D.cdc.meses.map(function (m, k) { return [mesLargo(m), pct(c.serie[k])]; }));
-    dibujarSerieCdc();
-  }
-
-  // Evolución mensual del cumplimiento global contra el umbral. Un solo eje.
-  // Con todas las SEREMIs se suman contribuciones, igual que en DIPLAP.
-  function dibujarSerieCdc() {
-    var caja = $('cdc-serie'), W = caja.clientWidth, H = caja.clientHeight;
-    if (W < 50 || H < 50) { caja.innerHTML = ''; return; }
-    var ms = D.cdc.meses, serie = AGG.cdc(D, filtro.r).serie, u = AGG.REGLAS.cdcAlerta;
-    // Dominio fijo de 40 a 140 %. DIPLAP prorratea la meta al periodo y enero
-    // se dispara (Arica 256 %, Maule 6 %): con el eje abierto, febrero a agosto
-    // quedaban aplastados. Lo que sale del dominio se marca con flecha y cifra;
-    // el valor exacto está en la tabla de datos.
-    var LO = 0.4, HI = 1.4, PASO = 0.2;
-    var PI = 48, PD = 12, ARR = 18, EJE = 26;
-    var ancho = W - PI - PD, alto = H - ARR - EJE;
-    var x = function (n) { return PI + (ms.length === 1 ? ancho / 2 : ancho * n / (ms.length - 1)); };
-    var acota = function (v) { return Math.min(HI, Math.max(LO, v || 0)); };
-    var y = function (v) { return ARR + alto - (acota(v) - LO) / (HI - LO) * alto; };
-    var o = [];
-    for (var g = LO; g <= HI + 1e-9; g += PASO) {
-      o.push('<line x1="' + PI + '" x2="' + (W - PD) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="var(--chart-grilla)" stroke-width="1"/>');
-      o.push('<text x="' + (PI - 6) + '" y="' + (y(g) + 4) + '" text-anchor="end" font-size="11" fill="var(--chart-eje-texto)">' +
-        dec(g * 100, 0) + ' %</text>');
-    }
-    // Meta (100 %) fina y continua; umbral de alerta (90 %) punteado.
-    o.push('<line x1="' + PI + '" x2="' + (W - PD) + '" y1="' + y(1) + '" y2="' + y(1) + '" stroke="var(--gris-50)" stroke-width="1"/>');
-    o.push('<line x1="' + PI + '" x2="' + (W - PD) + '" y1="' + y(u) + '" y2="' + y(u) +
-      '" stroke="var(--gris-60)" stroke-width="2" stroke-dasharray="5 4"/>');
-    o.push('<polyline fill="none" stroke="var(--primario-darken-1)" stroke-width="2" points="' +
-      serie.map(function (v, n) { return x(n) + ',' + y(v); }).join(' ') + '"/>');
-    // Puntos con su cifra al pasar el cursor: el área sensible es mayor que la marca.
-    serie.forEach(function (v, n) {
-      var fuera = v !== null && (v > HI || v < LO), cx = x(n), cy = y(v);
-      var marca = fuera
-        // Triángulo que apunta hacia donde quedó el valor, con la cifra al lado.
-        ? '<path d="M' + (cx - 6) + ' ' + (cy + (v > HI ? 5 : -5)) + ' L' + (cx + 6) + ' ' + (cy + (v > HI ? 5 : -5)) + ' L' + cx + ' ' + (cy + (v > HI ? -6 : 6)) +
-          ' Z" fill="var(--primario-darken-1)" stroke="var(--blanco-base)" stroke-width="1.5"/>' +
-          '<text x="' + (cx + 9) + '" y="' + (cy + (v > HI ? 10 : -4)) + '" font-size="11" fill="var(--chart-eje-texto)">' + pct(v, 0) + '</text>'
-        : '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="var(--primario-darken-1)" stroke="var(--blanco-base)" stroke-width="2"/>';
-      o.push('<g><title>' + mesLargo(ms[n]) + ': ' + pct(v) + '</title>' +
-        '<circle cx="' + cx + '" cy="' + cy + '" r="12" fill="transparent"/>' + marca + '</g>');
-    });
-    ms.forEach(function (m, n) {
-      if (ms.length > 8 && n % 2) return;
-      o.push('<text x="' + x(n) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" fill="var(--chart-eje-texto)">' + mesCorto(m) + '</text>');
-    });
-    caja.innerHTML = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H +
-      '" role="img" aria-label="Cumplimiento global mensual del CDC contra la meta de 100 % y el umbral de 90 %, en escala de 40 a 140 %. Los valores exactos están en la tabla de datos.">' + o.join('') + '</svg>';
   }
 
   // --------------------------------------------------------------- oficios
@@ -1225,7 +1393,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // Variación neutra: la flecha dice la dirección y el texto va en tinta. El
   // color de estado (con su ícono) aparece solo cuando se cruza el umbral de la
   // regla: pintar de rojo un −1,7 % que no es alerta decía otra cosa.
-  var REGLA_TRIM = ['caida', 'caidaFuerte'], REGLA_MES = ['caidaMes', 'caidaMesFuerte'];
+  var REGLA_TRIM = ['caida', 'caidaFuerte'];
   function celdaVar(v, regla) {
     if (v === null) return '—';
     v = redondeoPct(v);
@@ -1254,108 +1422,305 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   }
 
   // ------------------------------------------------------ gestión de Bienes
-  function pintarGestion() {
-    var ms = D.gestion.meses;
-    var mesActual = ms[ms.length - 2], mesPrevio = ms[ms.length - 3];
-    $('ges-sub').textContent = 'Los cuatro trámites que más gestiona cada SEREMI, comparando ' +
-      mesLargo(mesActual) + ' con ' + mesLargo(mesPrevio) +
-      '. El mes en curso (' + mesLargo(ultimo(ms)) + ') es parcial y se informa aparte, sin entrar en la comparación.';
-    $('ges-tit').textContent = 'Trámites más gestionados' + (filtro.r === null ? ' por SEREMI' : ' · ' + D.regiones[filtro.r].nombre);
+  // Ingresados y finalizados son flujo del periodo (se suman); el stock es
+  // saldo (acumulado desde 1998, no solo del año elegido). La comparación es
+  // siempre contra el mismo tramo del año anterior, nunca mes contra mes: con
+  // datos reales el conteo mensual por trámite es demasiado ruidoso. Los
+  // trámites se filtran con checkboxes propios de la página (no con el filtro
+  // global, que aquí solo elige la SEREMI); el gráfico por SEREMI respeta ese
+  // filtro de trámites, nunca el de SEREMI, para poder ver y elegir las 16.
+  var varGestion = 'ing';
+  var VAR_GES = { ing: 'Ingresados', fin: 'Finalizados', moc: 'Stock de casos' };
+  // Mismos tres tokens que ya usan las tramitadas del DCPR (positivo/negativo/
+  // tribunales): paleta cualitativa del estándar, en el mismo orden fijo.
+  // Azul/verde/amarillo pedidos así, no son el orden fijo de series del
+  // estándar (--chart-1…8, que no incluye un amarillo): --chart-3 y --chart-6
+  // sí están en esa paleta (azul y verde); para «amarillo» no hay un tono de
+  // serie en la paleta, así que se reutiliza --chart-estado-alerta (ámbar),
+  // el más parecido, en vez de inventar uno nuevo.
+  var COLOR_GES = { ing: '--chart-3', fin: '--chart-6', moc: '--chart-estado-alerta' };
 
-    var filas = [];
-    regiones().forEach(function (r) {
-      var top = AGG.gestion(D, r, 4);
-      if (!top.length) {
-        filas.push([esc(D.regiones[r].nombre), '<i style="color:var(--gris-60)">sin movimientos</i>', '', '', '', '']);
-        return;
-      }
-      top.forEach(function (g, k) {
-        filas.push([k === 0 ? esc(D.regiones[r].nombre) : '', esc(g.tramite),
-                    num(g.actual), num(g.anterior), celdaVar(g.variacion, REGLA_MES), num(g.parcial)]);
-      });
+  function tramitesElegidos() {
+    return Array.prototype.map.call($('ges-combo-opciones').querySelectorAll('input:checked'), function (cb) { return cb.value; });
+  }
+
+  // Aclaraciones de nombre que no caben en el nombre del trámite: se repiten
+  // en el combo y en la tabla, chicas (<small>), para no competir con la cifra.
+  var NOTA_TRAMITE = { 'Ventas por Propuesta Pública': 'incluye Concesión por propuesta pública' };
+  function notaTramite(nombre) {
+    var n = NOTA_TRAMITE[nombre];
+    return n ? ' <small>(' + esc(n) + ')</small>' : '';
+  }
+
+  // «Seleccionar todos» marca/desmarca el resto y refleja su estado (marcado,
+  // vacío o a medias) cada vez que cambia alguno de los otros — nunca al
+  // revés: el checkbox de cada trámite sigue siendo la fuente de verdad.
+  function actualizarEstadoTodos() {
+    var casillas = $('ges-combo-opciones').querySelectorAll('input[type="checkbox"]');
+    var marcadas = Array.prototype.filter.call(casillas, function (cb) { return cb.checked; }).length;
+    $('ges-check-todos').checked = marcadas === casillas.length;
+    $('ges-check-todos').indeterminate = marcadas > 0 && marcadas < casillas.length;
+  }
+
+  // Combo box: <details>/<summary> con la misma cara que el <select> de
+  // SEREMI (.chip), pero con checkboxes adentro para elegir varios a la vez.
+  function construirFiltroGestion() {
+    $('ges-combo-lista').innerHTML =
+      '<label class="opcion ges-todos"><input type="checkbox" id="ges-check-todos" checked>Seleccionar todos</label>' +
+      '<hr class="ges-combo-sep">' +
+      '<div id="ges-combo-opciones">' + D.gestion.tramites.map(function (t) {
+        return '<label class="opcion"><input type="checkbox" value="' + esc(t.nombre) + '" checked>' + esc(t.nombre) + notaTramite(t.nombre) + '</label>';
+      }).join('') + '</div>';
+    $('ges-check-todos').addEventListener('change', function () {
+      var marcar = this.checked;
+      this.indeterminate = false;
+      Array.prototype.forEach.call($('ges-combo-opciones').querySelectorAll('input[type="checkbox"]'),
+        function (cb) { cb.checked = marcar; });
+      actualizarResumenTramites();
+      pintarGestion();
     });
+    $('ges-combo-opciones').addEventListener('change', function () {
+      actualizarEstadoTodos();
+      actualizarResumenTramites();
+      pintarGestion();
+    });
+    // Un clic afuera cierra el combo, como cualquier selector.
+    document.addEventListener('click', function (ev) {
+      if ($('ges-filtro').hasAttribute('open') && !$('ges-filtro').contains(ev.target)) {
+        $('ges-filtro').removeAttribute('open');
+      }
+    });
+    actualizarResumenTramites();
+    // Clic en un trámite de la tabla: lo deja como único elegido; un segundo
+    // clic sobre ese mismo (ya el único) vuelve a marcarlos todos.
+    $('ges-tabla').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-tramite]');
+      if (!b) return;
+      var nombre = b.getAttribute('data-tramite');
+      var casillas = $('ges-combo-opciones').querySelectorAll('input[type="checkbox"]');
+      var yaEraSoloEsta = Array.prototype.every.call(casillas, function (cb) {
+        return cb.value === nombre ? cb.checked : !cb.checked;
+      });
+      Array.prototype.forEach.call(casillas, function (cb) { cb.checked = yaEraSoloEsta || cb.value === nombre; });
+      actualizarEstadoTodos();
+      actualizarResumenTramites();
+      pintarGestion();
+    });
+    $('ges-var').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-var]');
+      if (!b) return;
+      varGestion = b.getAttribute('data-var');
+      pintarGestion();
+    });
+  }
+
+  function actualizarResumenTramites() {
+    var total = D.gestion.tramites.length, elegidos = tramitesElegidos().length;
+    $('ges-combo-resumen').textContent =
+      elegidos === total ? 'Todos' : elegidos === 0 ? 'Ninguno' : elegidos + ' de ' + total;
+  }
+
+  function pintarGestion() {
+    var elegidos = tramitesElegidos();
+    if (!elegidos.length) {
+      $('ges-kpis').innerHTML = '';
+      $('ges-tabla-sub').textContent = 'Selecciona al menos un trámite.';
+      $('ges-tabla').innerHTML = '';
+      $('ges-barras-sub').textContent = '';
+      $('ges-barras').innerHTML = '';
+      return;
+    }
+    var x = AGG.bienes(D, { region: filtro.r === null ? null : D.regiones[filtro.r].codigo, tramites: elegidos });
+    var corte = mesLargo(x.corte), corteAnt = x.corteAnterior ? mesLargo(x.corteAnterior) : null;
+
+    // ---- KPIs: Ingresados/Finalizados/Stock usan el mismo color que su
+    // categoría en el gráfico de barras de abajo (COLOR_GES), para que se
+    // reconozcan de un vistazo. Rezago no entra en ese gráfico, así que su
+    // cifra queda sin colorear; lo que sí se colorea es el % ya cerrado de su
+    // leyenda, con los mismos tres colores del semáforo (no es un estado del
+    // semáforo real — esta página no entra ahí —, es solo la misma paleta).
+    var rezagoBase = x.kpi.rezago.base, rezagoAct = x.kpi.rezago.actual;
+    var pctCerrado = rezagoBase ? (rezagoBase - rezagoAct) / rezagoBase : null;
+    var colorCerrado = pctCerrado === null ? null
+      : pctCerrado < 0.75 ? '--error-darken-3' : pctCerrado < 0.90 ? '--chart-estado-alerta' : '--exito-darken-3';
+    var pctCerradoTxt = colorCerrado
+      ? '<b style="color:var(' + colorCerrado + ')">' + pct(pctCerrado, 0) + '</b>' : pct(pctCerrado, 0);
+    var textoRezago = rezagoAct === null ? 'sin datos a diciembre de 2025'
+      : !rezagoBase ? 'No había casos en rezago al 31-12-2025.'
+      : 'Se ha finalizado un ' + pctCerradoTxt + ' de los ' + num(rezagoBase) +
+        ' casos rezagados (casos que al 31-12-2025 estaban en proceso).';
+    var tarjetas = [
+      ['documento', 'Ingresados ' + x.anioActual, num(x.kpi.ing.actual),
+       '<div class="kpi-pie">vs. mismo periodo ' + x.anioAnterior + ': ' + celdaVar(x.kpi.ing.variacion) + '</div>', COLOR_GES.ing],
+      ['listo', 'Finalizados ' + x.anioActual, num(x.kpi.fin.actual),
+       '<div class="kpi-pie">vs. mismo periodo ' + x.anioAnterior + ': ' + celdaVar(x.kpi.fin.variacion) + '</div>', COLOR_GES.fin],
+      ['casa', 'Stock de casos', num(x.kpi.moc.actual),
+       '<div class="kpi-pie">' + (x.kpi.moc.anterior === null ? 'sin dato de ' + x.anioAnterior + ' con qué comparar'
+         : 'vs. ' + corteAnt + ': ' + celdaVar(x.kpi.moc.variacion)) + '</div>', COLOR_GES.moc],
+      ['reloj', 'Rezago', rezagoAct === null ? '—' : num(rezagoAct), '<div class="kpi-pie kpi-pie--texto">' + textoRezago + '</div>']
+    ];
+    $('ges-kpis').innerHTML = tarjetas.map(function (t) {
+      var estilo = t[4] ? ' style="color:var(' + t[4] + ')"' : '';
+      return '<div class="tarjeta kpi"><div class="kpi-rot">' + ico(t[0], 'ico--22') + t[1] + '</div>' +
+        '<div class="kpi-num"' + estilo + '>' + t[2] + '</div>' + t[3] + '</div>';
+    }).join('');
+
+    // ---- Tabla por trámite. El nombre es un botón: lo filtra a él solo (un
+    // segundo clic sobre el único elegido vuelve a mostrarlos todos), mismo
+    // gesto que elegir una SEREMI en el mapa o en una barra.
+    $('ges-tabla-tit').textContent = 'Detalle por trámite' + (filtro.r === null ? '' : ' · ' + D.regiones[filtro.r].nombre);
+    $('ges-tabla-sub').textContent = 'Acumulado ' + x.anioActual + ' a ' + corte + ', comparado con el mismo periodo de ' +
+      x.anioAnterior + '. El stock es el saldo de casos abiertos (ingresados menos bajas), acumulado desde el inicio de la serie. ' +
+      'El rezago es cuánto de lo que ya estaba en trámite al 31-12-2025 sigue sin resolver. Haz clic en un trámite para filtrarlo.';
+    var soloUno = elegidos.length === 1;
+    var filas = x.porTramite.map(function (t) {
+      var elegido = soloUno && elegidos[0] === t.nombre;
+      var boton = '<button type="button" class="btn-fila" data-tramite="' + esc(t.nombre) +
+        '" aria-pressed="' + elegido + '">' + esc(t.nombre) + '</button>' + notaTramite(t.nombre);
+      return [boton, num(t.ing.actual), celdaVar(t.ing.variacion), num(t.fin.actual), celdaVar(t.fin.variacion),
+              num(t.moc.actual), t.moc.anterior === null ? '—' : celdaVar(t.moc.variacion),
+              t.rezago.actual === null ? '—' : num(t.rezago.actual)];
+    });
+    if (x.porTramite.length > 1) {
+      filas.push(['<b>Total</b>', num(x.kpi.ing.actual), celdaVar(x.kpi.ing.variacion), num(x.kpi.fin.actual),
+                  celdaVar(x.kpi.fin.variacion), num(x.kpi.moc.actual),
+                  x.kpi.moc.anterior === null ? '—' : celdaVar(x.kpi.moc.variacion),
+                  rezagoAct === null ? '—' : num(rezagoAct)]);
+    }
     $('ges-tabla').innerHTML = tablaHtml(
-      ['SEREMI', 'Trámite', mesCorto(mesActual) + ' ' + mesActual.slice(0, 4),
-       mesCorto(mesPrevio) + ' ' + mesPrevio.slice(0, 4), 'Variación', mesCorto(ultimo(ms)) + ' (parcial)'],
-      filas, true, [1]);
+      ['Trámite', 'Ingresados', 'vs ' + x.anioAnterior, 'Finalizados', 'vs ' + x.anioAnterior, 'Stock', 'vs ' + x.anioAnterior, 'Rezago'],
+      filas, true);
+
+    // ---- Gráfico por SEREMI: siempre las 16, filtradas solo por trámite.
+    Array.prototype.forEach.call($('ges-var').querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-var') === varGestion));
+    });
+    $('ges-barras-tit').textContent = VAR_GES[varGestion] + ' por SEREMI';
+    $('ges-ley-color').style.background = 'var(' + COLOR_GES[varGestion] + ')';
+    $('ges-ley-actual').textContent = VAR_GES[varGestion] + ' ' + x.anioActual;
+    $('ges-ley-anterior').textContent = 'Mismo periodo ' + x.anioAnterior;
+    $('ges-barras-sub').textContent = (varGestion === 'moc'
+      ? 'Stock de casos abiertos a ' + corte + (corteAnt ? ', comparado con el cierre de ' + corteAnt : '.')
+      : VAR_GES[varGestion] + ' acumulado ' + x.anioActual + ' a la fecha, comparado con el mismo periodo de ' + x.anioAnterior + '.') +
+      ' Haz clic en una SEREMI para filtrarla en todo el panel.';
+    var valores = x.porRegion.map(function (p) { return p[varGestion]; });
+    var tope = Math.max.apply(null, valores.map(function (v) { return Math.max(v.actual, v.anterior || 0); })) || 1;
+    var sel = function (r) { return ' data-r="' + r + '" aria-pressed="' + (filtro.r === r) + '"'; };
+    $('ges-barras').classList.toggle('con-sel', filtro.r !== null);
+    $('ges-barras').innerHTML = x.porRegion.map(function (p, r) {
+      var v = p[varGestion];
+      var tick = v.anterior !== null && v.anterior !== undefined
+        ? '<span class="meta-tick" style="left:' + Math.min(100, v.anterior / tope * 100).toFixed(1) + '%"></span>' : '';
+      return '<button type="button" class="barra-fila"' + sel(r) + ' title="' + esc(p.nombre) + ': ' + num(v.actual) +
+        ' · ' + x.anioAnterior + ': ' + (v.anterior === null || v.anterior === undefined ? 'sin dato' : num(v.anterior)) + '">' +
+        '<span class="barra-nom">' + esc(p.nombre) + '</span>' +
+        '<span class="pista"><span class="relleno" style="width:' + (v.actual / tope * 100).toFixed(1) +
+        '%; background:var(' + COLOR_GES[varGestion] + ')"></span>' + tick + '</span>' +
+        '<span class="barra-val">' + num(v.actual) + '</span></button>';
+    }).join('');
   }
 
   // ------------------------------------------------------------ gestión DCPR
   // Cifras acumuladas en 2026 del informe mensual del DCPR. La variación es lo
-  // que creció el acumulado desde el informe anterior.
-  var TRAMOS = [['positivo', 'Positivas (ingreso CBR)', '--chart-1'], ['negativo', 'Negativas', '--chart-2'],
-                ['tribunales', 'Enviadas a tribunales', '--chart-3']];
-
-  // Lo que muestra cada barra DCPR bajo la cifra: si la regla «sin avance» se
-  // enciende, el estado con ícono y etiqueta (igual que en CDC); si no, el avance.
-  function avance(f, k, sinAvance, previo) {
-    if (sinAvance) return sem(SEM[f.r].celdas.dcpr, 'Sin avance');
-    if (k.delta === null) return 'sin informe previo';
-    if (k.delta === 0) return 'sin cambio';
-    return signo(k.delta) + ' desde ' + previo;
-  }
+  // que creció el acumulado desde el informe anterior. El gráfico de abajo es
+  // del sub-panel «Flujos» (ver Gestión Regularización, agregar.js): un solo
+  // gráfico con botones para elegir el tipo de resolución, igual patrón que
+  // el de Gestión de Bienes (mismo componente .meta-tick para el año anterior).
+  var varResol = 'resA';
+  var VAR_RESOL = { resA: 'Resolución A', resB: 'Resolución B', resC: 'Resolución C' };
+  var COLOR_RESOL = { resA: '--chart-1', resB: '--chart-2', resC: '--chart-3' };
 
   function pintarDcpr() {
-    var ms = D.dcpr.meses, mes = mesLargo(ultimo(ms)), previo = mesDe(ms[ms.length - 2]);
     var x = AGG.dcpr(D, filtro.r);
+    var g = D.regularizacion, y = AGG.regularizacion(D, filtro.r);
+
+    // Tarjetas de títulos y tramitadas, de la fuente de siempre (el semáforo
+    // de la matriz sigue viviendo acá, sin cambios); las otras cinco son del
+    // sub-panel «Flujos», un dataset aparte sin relación con el semáforo.
+    function anioDe(k) { return k ? k.slice(0, 4) : null; }
+    function piePeriodo(corte, corteAnt, medida) {
+      return '<div class="kpi-pie">' + (corteAnt
+        ? 'vs. mismo periodo ' + anioDe(corteAnt) + ': ' + celdaVar(medida.variacion)
+        : 'sin dato de ' + (anioDe(corte) - 1) + ' con qué comparar') + '</div>';
+    }
+    // Ingresados sale del panel «A · Nuevos ingresos» de la fuente principal
+    // (no de Flujos: ese nombre se repite en un gráfico distinto, más atrasado,
+    // dentro de «D · Flujos»). Es del mes del corte, no acumulado en el año.
+    var ing = D.dcpr.ingresos, ingValor = filtro.r === null ? ing.total : ing.porRegion[filtro.r];
+    // Color fijo en la cifra para las seis, pedido así. Para «amarillo» no hay
+    // un tono de serie en la paleta (--chart-1…8 no incluye uno): se
+    // reutiliza --chart-estado-alerta (ámbar), el más parecido, igual que en
+    // Gestión de Bienes. Títulos entregados queda con el color por defecto.
     $('dc-kpis').innerHTML = [
-      ['documento', 'Títulos entregados', x.titulos, num(x.porEntregar) + ' disponibles por entregar'],
-      ['listo', 'Solicitudes tramitadas', x.tramitadas, num(x.enProceso) + ' más siguen en proceso'],
-      ['documento', 'Positivas (ingreso CBR)', x.positivo],
-      ['cerrar', 'Negativas', x.negativo],
-      ['bandera', 'Enviadas a tribunales', x.tribunales]
+      ['sube', 'Ingresados', num(ingValor),
+       '<div class="kpi-pie">Nuevos ingresos del mes, a ' + mesLargo(ing.mes) + '</div>', '--chart-3'],
+      ['documento', 'Títulos entregados', num(x.titulos.actual),
+       '<div class="kpi-pie">' + desde(x.titulos) + '</div><div class="kpi-pie">' + num(x.porEntregar) + ' disponibles por entregar</div>'],
+      ['listo', 'Resoluciones positivas (A+B+C) ' + anioDe(g.corteResol), num(y.positivas.actual),
+       piePeriodo(g.corteResol, g.corteResolAnterior, y.positivas), '--exito-darken-3'],
+      ['cerrar', 'Resoluciones negativas (A+B+C) ' + anioDe(g.corteResol), num(y.negativas.actual),
+       piePeriodo(g.corteResol, g.corteResolAnterior, y.negativas), '--error-darken-3'],
+      ['reloj', 'Casos en proceso', num(y.proceso.actual),
+       '<div class="kpi-pie">' + (g.corteProcesoAnterior
+         ? 'vs. ' + mesLargo(g.corteProcesoAnterior) + ': ' + celdaVar(y.proceso.variacion)
+         : 'sin dato de ' + (anioDe(g.corteProceso) - 1) + ' con qué comparar') + '</div>', '--chart-estado-alerta'],
+      ['bandera', 'Casos ingresados al CBR ' + anioDe(g.corteCbr), num(y.cbr.actual),
+       piePeriodo(g.corteCbr, g.corteCbrAnterior, y.cbr), '--negro-base']
     ].map(function (t) {
+      var estilo = t[4] ? ' style="color:var(' + t[4] + ')"' : '';
       return '<div class="tarjeta kpi"><div class="kpi-rot">' + ico(t[0], 'ico--22') + t[1] + '</div>' +
-        '<div class="kpi-num">' + num(t[2].actual) + '</div><div class="kpi-pie">' + desde(t[2]) + '</div>' +
-        (t[3] ? '<div class="kpi-pie">' + t[3] + '</div>' : '') + '</div>';
+        '<div class="kpi-num"' + estilo + '>' + t[2] + '</div>' + t[3] + '</div>';
     }).join('');
 
-    var por = D.regiones.map(function (reg, r) { return { r: r, nom: reg.nombre, x: SEM[r].detalle.dcpr }; });
-    var sel = function (f) { return ' data-r="' + f.r + '" aria-pressed="' + (filtro.r === f.r) + '"'; };
-
-    // Apiladas: un tramo por tipo de tramitación, en el orden fijo de la paleta.
-    var tope = Math.max.apply(null, por.map(function (f) { return f.x.tramitadas.actual; })) || 1;
-    $('dc-tram-sub').textContent = 'Acumulado 2026 al informe de ' + mes + '. Tramitadas = positivas + negativas + enviadas a tribunales; las que siguen en proceso no entran. Haz clic en una SEREMI para filtrar.';
-    $('dc-tram').classList.toggle('con-sel', filtro.r !== null);
-    $('dc-tram').innerHTML = por.map(function (f) {
-      var t = f.x.tramitadas;
-      return '<button type="button" class="barra-fila"' + sel(f) + ' title="' + esc(f.nom) + ': ' + num(t.actual) + ' tramitadas (' +
-        TRAMOS.map(function (k) { return k[1].toLowerCase() + ' ' + num(f.x[k[0]].actual); }).join(', ') + ') · ' + desde(t) + '">' +
-        '<span class="barra-nom">' + esc(f.nom) + '</span><span class="pista pista--apilada">' +
-        TRAMOS.filter(function (k) { return f.x[k[0]].actual > 0; }).map(function (k) {
-          return '<span class="relleno" title="' + esc(f.nom) + ' · ' + k[1] + ': ' + num(f.x[k[0]].actual) +
-            '" style="width:' + (f.x[k[0]].actual / tope * 100).toFixed(2) + '%; background:var(' + k[2] + ')"></span>';
-        }).join('') + '</span>' +
-        '<span class="barra-val">' + num(t.actual) + '<small>' + avance(f, t, f.x.sinAvanceTramitadas, previo) + '</small></span></button>';
+    // Resoluciones por SEREMI: un gráfico, no tres — botones para elegir el
+    // tipo (A, B o C) y una marca con el valor del mismo mes del año
+    // anterior sobre cada barra, igual que el gráfico de Gestión de Bienes.
+    Array.prototype.forEach.call($('dc-var').querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-var') === varResol));
+    });
+    var corte = mesLargo(g.corteResol), corteAnt = g.corteResolAnterior ? mesLargo(g.corteResolAnterior) : null;
+    $('dc-resol-tit').textContent = VAR_RESOL[varResol] + ' por SEREMI';
+    $('dc-ley-color').style.background = 'var(' + COLOR_RESOL[varResol] + ')';
+    $('dc-ley-actual').textContent = VAR_RESOL[varResol] + ' ' + anioDe(g.corteResol);
+    $('dc-ley-anterior').textContent = corteAnt ? 'Mismo mes ' + anioDe(g.corteResolAnterior) : 'Sin dato del año anterior';
+    $('dc-resol-sub').textContent = VAR_RESOL[varResol] + ' acumuladas ' + anioDe(g.corteResol) + ' a ' + corte +
+      (corteAnt ? ', comparadas con el mismo periodo de ' + anioDe(g.corteResolAnterior) : '') +
+      '. Fuente: sub-panel «Flujos» del DCPR. Haz clic en una SEREMI para filtrarla en todo el panel.';
+    var valoresResol = D.regiones.map(function (reg, r) { return AGG.regularizacion(D, r)[varResol]; });
+    var topeResol = Math.max.apply(null, valoresResol.map(function (v) { return Math.max(v.actual, v.anterior || 0); })) || 1;
+    var selResol = function (r) { return ' data-r="' + r + '" aria-pressed="' + (filtro.r === r) + '"'; };
+    $('dc-resol').classList.toggle('con-sel', filtro.r !== null);
+    $('dc-resol').innerHTML = D.regiones.map(function (reg, r) {
+      var v = valoresResol[r];
+      var tick = v.anterior !== null && v.anterior !== undefined
+        ? '<span class="meta-tick" style="left:' + Math.min(100, v.anterior / topeResol * 100).toFixed(1) + '%"></span>' : '';
+      return '<button type="button" class="barra-fila"' + selResol(r) + ' title="' + esc(reg.nombre) + ': ' + num(v.actual) +
+        ' · ' + anioDe(g.corteResolAnterior) + ': ' + (v.anterior === null || v.anterior === undefined ? 'sin dato' : num(v.anterior)) + '">' +
+        '<span class="barra-nom">' + esc(reg.nombre) + '</span>' +
+        '<span class="pista"><span class="relleno" style="width:' + (v.actual / topeResol * 100).toFixed(1) +
+        '%; background:var(' + COLOR_RESOL[varResol] + ')"></span>' + tick + '</span>' +
+        '<span class="barra-val">' + num(v.actual) + '</span></button>';
     }).join('');
 
-    var topeT = Math.max.apply(null, por.map(function (f) { return f.x.titulos.actual; })) || 1;
-    $('dc-tit-sub').textContent = 'Acumulado 2026 al informe de ' + mes + '.';
-    $('dc-tit').classList.toggle('con-sel', filtro.r !== null);
-    $('dc-tit').innerHTML = por.map(function (f) {
-      var t = f.x.titulos;
-      return '<button type="button" class="barra-fila"' + sel(f) + ' title="' + esc(f.nom) + ': ' + num(t.actual) + ' títulos entregados · ' + desde(t) +
-        ' · ' + num(f.x.porEntregar) + ' disponibles por entregar">' +
-        '<span class="barra-nom">' + esc(f.nom) + '</span>' +
-        '<span class="pista"><span class="relleno" style="width:' + (t.actual / topeT * 100).toFixed(1) + '%"></span></span>' +
-        '<span class="barra-val">' + num(t.actual) + '<small>' + avance(f, t, f.x.sinAvanceTitulos, previo) + '</small></span></button>';
-    }).join('');
-
-    // La fila «Total país» suma lo mismo que publica el informe del DCPR:
-    // extraer.py se niega a escribir si no cuadra.
-    $('dc-tabla-sub').textContent = 'Acumulado 2026 al informe de ' + mes + '. La columna «desde ' + previo +
-      '» es lo que creció el acumulado respecto del informe anterior. Fuente: Panel de Gestión Mensual DCPR.';
-    var filas = regiones().map(function (r) { return [esc(D.regiones[r].nombre), SEM[r].detalle.dcpr, sem(SEM[r].celdas.dcpr)]; });
-    if (filtro.r === null) filas.push(['<b>Total país</b>', x, '']);
-    $('dc-tabla').innerHTML = tablaHtml(
-      ['SEREMI', 'Títulos entregados', 'desde ' + previo, 'Por entregar', 'Tramitadas', 'desde ' + previo,
-       'Positivas (CBR)', 'Negativas', 'Tribunales', 'En proceso', 'Estado'],
-      filas.map(function (f) {
-        var y = f[1];
-        return [f[0], num(y.titulos.actual), signo(y.titulos.delta), num(y.porEntregar), num(y.tramitadas.actual),
-                signo(y.tramitadas.delta), num(y.positivo.actual), num(y.negativo.actual), num(y.tribunales.actual),
-                num(y.enProceso), f[2]];
-      }), true);
+    // Vista de tabla del mismo gráfico (ESTANDAR-VISUALIZACION.md §4): los
+    // tres tipos juntos, a diferencia del gráfico que muestra uno a la vez.
+    var filasResol = regiones().map(function (r) {
+      var f = AGG.regularizacion(D, r);
+      return [esc(D.regiones[r].nombre),
+              num(f.resA.actual), f.resA.anterior === null ? '—' : celdaVar(f.resA.variacion),
+              num(f.resB.actual), f.resB.anterior === null ? '—' : celdaVar(f.resB.variacion),
+              num(f.resC.actual), f.resC.anterior === null ? '—' : celdaVar(f.resC.variacion)];
+    });
+    if (filtro.r === null) {
+      filasResol.push(['<b>Total país</b>', num(y.resA.actual), y.resA.anterior === null ? '—' : celdaVar(y.resA.variacion),
+        num(y.resB.actual), y.resB.anterior === null ? '—' : celdaVar(y.resB.variacion),
+        num(y.resC.actual), y.resC.anterior === null ? '—' : celdaVar(y.resC.variacion)]);
+    }
+    tablaDe($('dc-resol-tabla'), 'Ver tabla de datos',
+      ['SEREMI', 'Resolución A', 'vs ' + (corteAnt ? anioDe(g.corteResolAnterior) : '—'),
+       'Resolución B', 'vs ' + (corteAnt ? anioDe(g.corteResolAnterior) : '—'),
+       'Resolución C', 'vs ' + (corteAnt ? anioDe(g.corteResolAnterior) : '—')],
+      filasResol, true);
   }
 
   // ------------------------------------------------------ gobierno en terreno
@@ -1389,6 +1754,18 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     if (i < 0) return;
     filtro.r = (filtro.r === i) ? null : i;
     $('f-seremi').value = filtro.r === null ? '' : String(filtro.r);
+    pintar();
+  }
+
+  // Variante sin alternar: para cuando el filtro va de la mano de un cambio
+  // de página (celda de la matriz), donde alternar a «todas» sería confuso —
+  // ir a otra sección y de paso perder el filtro que se acaba de elegir.
+  function elegirRegionPorCodigoExacta(cod) {
+    var i = -1;
+    D.regiones.forEach(function (r, k) { if (r.codigo === cod) i = k; });
+    if (i < 0) return;
+    filtro.r = i;
+    $('f-seremi').value = String(i);
     pintar();
   }
 
@@ -1491,6 +1868,120 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       ['SEREMI', 'Presupuesto vigente', 'Devengado', '% ejecución', 'Meta', 'Estado'], filas, true);
   }
 
+  // ------------------------------------------------------- Gestión de Convenios
+  // Foto del estado de los convenios a la fecha de la planilla, sin serie
+  // mensual (igual que Presupuesto): no entra al semáforo ni a las alertas.
+  // Filtro de SEREMI: el global de la barra de filtros. Filtro de Materia:
+  // combo propio de la página, mismo patrón de checkboxes que el de Trámites
+  // en Gestión de Bienes. El toggle Vigentes/Todos solo cambia qué filas de
+  // «Convenios FT» se listan en su tabla; los tres indicadores y la tabla de
+  // «En trámite» no dependen de él.
+  var soloVigentesFT = true;
+
+  function materiasElegidas() {
+    return Array.prototype.map.call($('mat-combo-opciones').querySelectorAll('input:checked'), function (cb) { return cb.value; });
+  }
+
+  function actualizarEstadoMateriasTodos() {
+    var casillas = $('mat-combo-opciones').querySelectorAll('input[type="checkbox"]');
+    var marcadas = Array.prototype.filter.call(casillas, function (cb) { return cb.checked; }).length;
+    $('mat-check-todos').checked = marcadas === casillas.length;
+    $('mat-check-todos').indeterminate = marcadas > 0 && marcadas < casillas.length;
+  }
+
+  function actualizarResumenMaterias() {
+    var total = D.convenios.materias.length, elegidas = materiasElegidas().length;
+    $('mat-combo-resumen').textContent =
+      elegidas === total ? 'Todas' : elegidas === 0 ? 'Ninguna' : elegidas + ' de ' + total;
+  }
+
+  function construirFiltroMaterias() {
+    $('mat-combo-lista').innerHTML =
+      '<label class="opcion ges-todos"><input type="checkbox" id="mat-check-todos" checked>Seleccionar todos</label>' +
+      '<hr class="ges-combo-sep">' +
+      '<div id="mat-combo-opciones">' + D.convenios.materias.map(function (m) {
+        return '<label class="opcion"><input type="checkbox" value="' + esc(m) + '" checked>' + esc(m) + '</label>';
+      }).join('') + '</div>';
+    $('mat-check-todos').addEventListener('change', function () {
+      var marcar = this.checked;
+      this.indeterminate = false;
+      Array.prototype.forEach.call($('mat-combo-opciones').querySelectorAll('input[type="checkbox"]'),
+        function (cb) { cb.checked = marcar; });
+      actualizarResumenMaterias();
+      pintarConvenios();
+    });
+    $('mat-combo-opciones').addEventListener('change', function () {
+      actualizarEstadoMateriasTodos();
+      actualizarResumenMaterias();
+      pintarConvenios();
+    });
+    document.addEventListener('click', function (ev) {
+      if ($('mat-filtro').hasAttribute('open') && !$('mat-filtro').contains(ev.target)) {
+        $('mat-filtro').removeAttribute('open');
+      }
+    });
+    actualizarResumenMaterias();
+    $('cv-estado').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-estado]');
+      if (!b) return;
+      soloVigentesFT = b.getAttribute('data-estado') === 'vigentes';
+      pintarConvenios();
+    });
+  }
+
+  function pintarConvenios() {
+    var elegidas = materiasElegidas();
+    if (!elegidas.length) {
+      $('cv-kpis').innerHTML = '';
+      $('cv-tabla-ft-sub').textContent = 'Selecciona al menos una materia.';
+      $('cv-tabla-ft').innerHTML = '';
+      $('cv-tabla-tramite-sub').textContent = '';
+      $('cv-tabla-tramite').innerHTML = '';
+      return;
+    }
+    var x = AGG.convenios(D, { region: filtro.r === null ? null : D.regiones[filtro.r].codigo, materias: elegidas });
+    var corte = x.corte ? fecha(x.corte) : null;
+
+    var pieCorte = '<div class="kpi-pie">' + (corte ? 'Corte ' + corte : '') + '</div>';
+    var tarjetas = [
+      ['documento', 'Convenios vigentes', '', num(x.kpi.vigentes), pieCorte, false],
+      ['moneda', 'Monto Convenio', '', pesos(x.kpi.monto), pieCorte, true],
+      ['reloj', 'Convenios en trámite', '', num(x.kpi.tramite), '<div class="kpi-pie">Hoja «En trámite»</div>', false]
+    ];
+    $('cv-kpis').innerHTML = tarjetas.map(function (t) {
+      var c = t[2] ? ' kpi-rot--' + t[2] : '';
+      var n = (t[2] ? ' kpi-num--' + t[2] : '') + (t[5] ? ' kpi-num--money' : '');
+      return '<div class="tarjeta kpi"><div class="kpi-rot' + c + '">' + ico(t[0], 'ico--22') + t[1] + '</div>' +
+        '<div class="kpi-num' + n + '">' + t[3] + '</div>' + t[4] + '</div>';
+    }).join('');
+
+    // ---- Convenios FT
+    Array.prototype.forEach.call($('cv-estado').querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', String((b.getAttribute('data-estado') === 'vigentes') === soloVigentesFT));
+    });
+    $('cv-tabla-ft-tit').textContent = 'Convenios FT' + (filtro.r === null ? '' : ' · ' + D.regiones[filtro.r].nombre);
+    $('cv-tabla-ft-sub').textContent = (soloVigentesFT ? 'Convenios vigentes' : 'Todos los convenios formalizados, vigentes y no vigentes') +
+      (corte ? ', a ' + corte : '') + '. Fuente: Base_Convenios.xlsx, hoja «Convenios FT».';
+    var filasFT = (soloVigentesFT ? x.ftVigentes : x.ft).map(function (c) {
+      return [esc(D.regiones[c.r].nombre), esc(x.materias[c.materia]), esc(c.nombre),
+              c.inicio ? fecha(c.inicio) : '—', c.fin ? fecha(c.fin) : '—',
+              esc(c.tipoOtorgante), esc(c.entidadOtorgante), pesos(c.monto)];
+    });
+    $('cv-tabla-ft').innerHTML = filasFT.length ? tablaHtml(
+      ['SEREMI', 'Materia', 'Nombre Convenio', 'Inicio', 'Fin', 'Tipo Otorgante', 'Entidad Otorgante', 'Monto Convenio'],
+      filasFT, true) : '<p class="vacio">Sin convenios para este filtro.</p>';
+
+    // ---- Convenios en trámite
+    $('cv-tabla-tramite-sub').textContent = 'Convenios en proceso de negociación o firma' +
+      (corte ? ', a ' + corte : '') + '. Fuente: Base_Convenios.xlsx, hoja «En trámite».';
+    var filasTr = x.tramite.map(function (c) {
+      return [esc(D.regiones[c.r].nombre), esc(x.materias[c.materia]), esc(c.organismoExterno), pesos(c.monto)];
+    });
+    $('cv-tabla-tramite').innerHTML = filasTr.length ? tablaHtml(
+      ['SEREMI', 'Materia', 'Organismo externo', 'Monto Convenio'], filasTr, true)
+      : '<p class="vacio">Sin convenios en trámite para este filtro.</p>';
+  }
+
   // ------------------------------------------------------------- tablas
   function tablaHtml(cols, filas, crudo, izq) {
     var aIzq = function (i) { return izq && izq.indexOf(i) >= 0 ? ' class="izq"' : ''; };
@@ -1505,9 +1996,9 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   }
 
   // Cada gráfico lleva su vista de tabla (ESTANDAR-VISUALIZACION.md §4).
-  function tablaDe(det, rotulo, cols, filas) {
+  function tablaDe(det, rotulo, cols, filas, crudo) {
     var abierto = det.hasAttribute('open');
-    det.innerHTML = '<summary>' + rotulo + '</summary><div class="tabla-caja">' + tablaHtml(cols, filas) + '</div>';
+    det.innerHTML = '<summary>' + rotulo + '</summary><div class="tabla-caja">' + tablaHtml(cols, filas, crudo) + '</div>';
     if (abierto) det.setAttribute('open', '');
   }
 
@@ -1522,6 +2013,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     pintarCatastro();
     pintarGestion();
     pintarDcpr();
+    pintarConvenios();
     pintarTerreno();
     pintarPresupuesto();
     pintarAviso();
@@ -1545,9 +2037,16 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     Array.prototype.forEach.call(document.querySelectorAll('.pagina'), function (s) {
       s.hidden = s.id !== 'p-' + pagina;
     });
+    // El combo de trámites solo sirve en Gestión de Bienes: junto al de
+    // SEREMI en la barra de filtros, pero oculto en el resto de las páginas.
+    $('ges-filtro').hidden = pagina !== 'gestion';
+    if (pagina !== 'gestion') $('ges-filtro').removeAttribute('open');
+    // El combo de Materia solo sirve en Gestión de Convenios, mismo patrón.
+    $('mat-filtro').hidden = pagina !== 'convenios';
+    if (pagina !== 'convenios') $('mat-filtro').removeAttribute('open');
+    pintarSello();
     pintarAviso();
     guardarUrl();
-    if (pagina === 'cdc') dibujarSerieCdc();
     // El lector de pantalla anuncia la página nueva (su aria-label) y el
     // teclado sigue desde ahí, no desde el menú.
     if (enfocar) $('p-' + pagina).focus({ preventScroll: true });
@@ -1625,25 +2124,34 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
      'Mismo cálculo que el Panel de Gestión Institucional de DIPLAP: la suma de las contribuciones ponderadas al cumplimiento de cada indicador del CDC, dividida por la suma de las contribuciones ponderadas a su meta del periodo. El cumplimiento de un indicador es su avance efectivo dividido por su meta del periodo. Al día desde ' +
      Math.round(AGG.REGLAS.cdcAlerta * 100) + ' %, alerta bajo ' + Math.round(AGG.REGLAS.cdcAlerta * 100) + ' % y crítico bajo ' +
      Math.round(AGG.REGLAS.cdcCritico * 100) + ' %: los mismos cortes con que DIPLAP colorea su panel. La página lista los indicadores bajo ' +
-     Math.round(AGG.REGLAS.cdcAlerta * 100) + ' % aunque el global de la SEREMI esté al día. Las metas son en parte compartidas y en parte diferenciadas por región.'],
+     Math.round(AGG.REGLAS.cdcAlerta * 100) + ' % aunque el global de la SEREMI esté al día. Las metas son en parte compartidas y en parte diferenciadas por región. Cada indicador trae dos metas de DIPLAP: la «Meta anual» (el objetivo del año completo) y la «Meta al periodo» (esa misma meta prorrateada a lo que va corrido del año, la que se usa para calcular el cumplimiento).'],
     ['Oficios · días de respuesta',
      'Días entre el envío del Gabinete y la respuesta de la SEREMI. Los oficios sin respuesta cuentan su espera hasta hoy y no se descartan: dejarlos fuera esconde justamente a quien no contesta. No hay plazo estándar de respuesta; el panel marca alerta desde ' +
      AGG.REGLAS.oficioViejo + ' días de espera y crítico desde ' + AGG.REGLAS.oficioCritico + ', como regla operativa del seguimiento, no como incumplimiento.'],
     ['Catastro · variación',
      'Tenencia según el informe de Catastro: administradas por el Ministerio = sin acto de administración; con acto de administración vigente = entregadas a terceros; parcialmente administradas = tenencia mixta, una parte con acto y otra sin él. Las tres suman el total de UC sin duplicar. Las dos primeras se comparan con el propio trimestre anterior de cada SEREMI, nunca con las demás: así lo pide el documento. Alerta bajo ' +
      dec(AGG.REGLAS.caida * 100, 0) + ' % y crítico bajo ' + dec(AGG.REGLAS.caidaFuerte * 100, 0) + ' %. La cantidad de UC y la superficie fiscal se informan sin semáforo: bajar superficie fiscal puede ser justamente la gestión (ventas, transferencias). El porcentaje nacional es la superficie fiscal de la región dividida por la de las 16. El trimestre en curso no se muestra hasta que cierra.'],
-    ['Gestión de Bienes · trámites más gestionados',
-     'Pendiente de definición: hay que decidir si «gestión» son los casos con actos dictados (planilla que elabora DBN con lo que reportan las regiones) o los casos finalizados en el sistema (base GXP). Mientras tanto la página muestra datos de ejemplo: los cuatro trámites con más movimientos de cada SEREMI, comparando los dos últimos meses completos. Alerta bajo ' +
+    ['Gestión de Bienes · ingresados, finalizados, stock y rezago',
+     'Trámites de Panel-Autoridades: ' + D.gestion.tramites.map(function (t) { return t.nombre; }).join(', ') +
+     '. «Ventas por Propuesta Pública» incluye Concesión por propuesta pública. Ingresados y finalizados son flujo del periodo (se suman); el stock es el saldo de casos abiertos (ingresados menos bajas), acumulado desde el inicio de la serie, no solo del año elegido. La comparación es siempre contra el mismo tramo del año anterior, nunca mes contra mes. El rezago es una cota, no un conteo exacto: casos que ya estaban en trámite al 31-12-2025 y que al corte siguen sin resolver, calculado como el stock a esa fecha menos las bajas posteriores (sin bajar de cero), suponiendo que las bajas cierran primero lo más antiguo. El semáforo de la matriz usa finalizados del año a la fecha contra el mismo tramo del año anterior, siempre con los trámites completos, sin importar el filtro de la página. Alerta bajo ' +
      dec(AGG.REGLAS.caidaMes * 100, 0) + ' % y crítico bajo ' + dec(AGG.REGLAS.caidaMesFuerte * 100, 0) + ' %.'],
-    ['Gestión DCPR · títulos y solicitudes tramitadas',
-     'Cifras acumuladas en el año según el Panel de Gestión Mensual del DCPR. Solicitudes tramitadas = positivas (ingreso al CBR) + negativas + enviadas a tribunales; las que siguen en proceso se informan aparte. La variación es lo que creció el acumulado desde el informe anterior. Alerta si el acumulado de tramitadas no creció, o si no se entregó ningún título teniendo títulos disponibles para entregar; crítico si pasan las dos. Las sumas por región cuadran con los totales que publica el DCPR: si no cuadran, el panel no se actualiza.'],
+    ['Presupuesto CDC · % de ejecución',
+     'Presupuesto vigente, devengado y meta del Convenio de Desempeño Colectivo por SEREMI, del Panel Presupuestario del Departamento de Presupuesto. No es una de las cinco dimensiones del documento ni entra al semáforo: el panel publica solo el corte vigente (resultado final del mes), sin serie mensual, así que no hay variación contra el periodo anterior.'],
+    ['Gestión Regularización · títulos y solicitudes tramitadas',
+     'Cifras acumuladas en el año según el Panel de Gestión Mensual del DCPR. Solicitudes tramitadas = positivas (ingreso al CBR) + negativas + enviadas a tribunales; las que siguen en proceso se informan aparte. La variación es lo que creció el acumulado desde el informe anterior. Alerta si el acumulado de tramitadas no creció, o si no se entregó ningún título teniendo títulos disponibles para entregar; crítico si pasan las dos. Las sumas por región cuadran con los totales que publica el DCPR: si no cuadran, el panel no se actualiza. «Títulos entregados» sigue esta misma fuente.'],
+    ['Gestión Regularización · Ingresados',
+     'Panel «A · Nuevos ingresos» de la misma fuente principal del DCPR (no del sub-panel «Flujos»: ahí hay un gráfico con el mismo nombre, pero es otro dataset y va más atrasado). Es el total de expedientes ingresados ese mes — no un acumulado en el año — y no se compara con el año anterior.'],
+    ['Gestión Regularización · resoluciones, proceso y CBR',
+     'Del sub-panel «Flujos» de esa misma página (un dataset aparte, sin relación con el de títulos, tramitadas e ingresados de arriba): resoluciones positivas y negativas (suma de los tipos A, B y C), casos en proceso y casos ingresados al CBR. Resoluciones y CBR son flujo del año a la fecha, comparado contra el mismo tramo del año anterior; casos en proceso es una foto al corte (el saldo de expedientes abiertos), comparada contra la misma foto del año anterior, no algo que se sume. El gráfico «Resoluciones por SEREMI» desglosa cada tipo (A, B y C: positivas más negativas), uno a la vez, con la marca del mismo mes del año anterior sobre cada barra; su tabla trae los tres juntos. Ninguna de estas cifras entra al semáforo ni a las alertas del Resumen.'],
+    ['Gestión de Convenios · vigentes, monto y en trámite',
+     'Base_Convenios.xlsx (planilla de UPCG, sincronizada por OneDrive; el enlace de SharePoint exige inicio de sesión institucional, así que no se lee por URL como las demás fuentes). Es una foto a la fecha de la planilla, sin serie mensual: no entra al semáforo ni a las alertas. «Convenios vigentes» y su monto salen solo de la hoja «Convenios FT» con Estado = Vigente; «Convenios en trámite» es el total de la hoja «En trámite» tras el filtro. La SEREMI sale de «Región/División» (Convenios FT) o de «RESPONSABLE MBN» (En trámite, buscando el nombre de la región dentro del texto: «Seremi Los Lagos», «DCPR - Seremi O\'Higgins»); las filas de alcance nacional (DIPLAP, GABSUB, DBN, DCPR, DICAT, SNIT y similares) no tienen SEREMI y se omiten, no es un error de captura. La Materia de «Convenios FT» es la que trae la propia planilla; la de «En trámite» se homologa por palabra clave a las mismas 4 categorías (Propiedad fiscal, Regularización, Mixto, Otro), porque su «MATERIA (referencial)» es texto libre.'],
     ['Gobierno en terreno · quincenas sin reportar',
      'Quincenas seguidas sin ninguna salida cargada, contadas desde la última hacia atrás. Alerta con una, crítico con más de ' +
      AGG.REGLAS.quincenasSinReportar + '. Una quincena sin fila es una quincena sin reporte, no una quincena sin salidas.'],
     ['Mes y trimestre en curso',
      'Sus cifras están incompletas. Nunca entran en las comparaciones contra el periodo anterior y se informan por separado.'],
     ['Fuentes',
-     'CDC: Panel de Gestión Institucional 2026 de DIPLAP. Gestión DCPR: Panel de Gestión Mensual del DCPR. Oficios, catastro y gobierno en terreno: planillas por crear (formato en plantillas/LEEME.md); hoy, datos de ejemplo. Gestión de Bienes: fuente por definir; hoy, datos de ejemplo.']
+     'CDC: Panel de Gestión Institucional 2026 de DIPLAP. Gestión Regularización: Panel de Gestión Mensual del DCPR (títulos y tramitadas de su fuente principal; ingresados, resoluciones, proceso y CBR de su sub-panel «Flujos»). Presupuesto CDC: Panel Presupuestario del Departamento de Presupuesto. Gestión de Bienes: Panel-Autoridades. Gestión de Convenios: Base_Convenios.xlsx (planilla de UPCG). Oficios, catastro y gobierno en terreno: planillas por crear (formato en plantillas/LEEME.md); hoy, datos de ejemplo.']
   ];
   $('glo-lista').innerHTML = $('glo-imp').innerHTML = GLOSARIO.map(function (g) {
     return '<dt>' + esc(g[0]) + '</dt><dd>' + esc(g[1]) + '</dd>';
@@ -1723,7 +2231,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     Array.prototype.forEach.call(document.querySelectorAll('details:not([open])'), function (d) { d.open = true; abiertos.push(d); });
     document.body.classList.add('informe');
     Array.prototype.forEach.call(document.querySelectorAll('.pagina'), function (s) { s.hidden = false; });
-    dibujarSerieCdc();
     window.print();
     document.body.classList.remove('informe');
     ocultos.forEach(function (el) { el.classList.remove('fuera'); });
@@ -1731,7 +2238,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     Array.prototype.forEach.call(document.querySelectorAll('.pagina'), function (s) {
       s.hidden = s.id !== 'p-' + pagina;
     });
-    dibujarSerieCdc();
   });
 
   // ------------------------------------------------------------------ arranque
@@ -1742,15 +2248,17 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   var vista = decodeURIComponent(location.hash.slice(1)).split('/');
   D.regiones.forEach(function (r, i) { if (r.codigo === vista[1]) filtro.r = i; });
   $('f-seremi').value = filtro.r === null ? '' : String(filtro.r);
+  construirFiltroGestion();
+  construirFiltroMaterias();
+  $('dc-var').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-var]');
+    if (!b) return;
+    varResol = b.getAttribute('data-var');
+    pintarDcpr();
+  });
   armarMapa();
   irA(document.querySelector('.pag[data-pag="' + vista[0] + '"]') ? vista[0] : 'resumen', false);
   pintar();
-
-  var temporizador;
-  window.addEventListener('resize', function () {
-    clearTimeout(temporizador);
-    temporizador = setTimeout(dibujarSerieCdc, 150);
-  });
 })();
 </script>
 </body>
