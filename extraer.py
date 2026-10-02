@@ -9,14 +9,22 @@ Fuentes:
     §2.1 CDC                  Panel de Gestión Institucional de DIPLAP (real)
     §2.4b Gestión DCPR        Panel de Gestión Mensual del DCPR (real)
     Presupuesto CDC           Panel Presupuestario MBN (real, sin serie mensual)
+    §2.4a Gestión Bienes      Panel-Autoridades, ver TRAMITES_BIENES (real)
+    Gestión de Convenios      plantillas/Base_Convenios.xlsx (real, archivo local)
     §2.2 Oficios              plantillas/oficios.csv              (ejemplo)
     §2.3 Catastro             plantillas/catastro.csv             (ejemplo)
-    §2.4a Gestión Bienes      por definir, ver README             (ejemplo)
     §2.5 Gobierno en terreno  plantillas/gobierno_en_terreno.csv  (ejemplo)
 
-Las dos fuentes reales se leen de los paneles publicados, así las cifras son
-las mismas que ve todo el Ministerio. FUENTE_CDC y FUENTE_DCPR (en el entorno
-o en .env) aceptan otra URL o una ruta local, para correr sin internet.
+Las fuentes reales se leen de los paneles publicados, así las cifras son las
+mismas que ve todo el Ministerio. FUENTE_CDC, FUENTE_DCPR, FUENTE_PRESUPUESTO,
+FUENTE_GESTION y FUENTE_CONVENIOS (en el entorno o en .env) aceptan otra URL o
+ruta local, para correr sin internet.
+
+Gestión de Convenios es un caso aparte: el documento fuente vive en SharePoint
+(enlace que exige inicio de sesión institucional, no un sitio público como las
+demás), así que no se descarga por URL. Se lee la copia local sincronizada por
+OneDrive, en plantillas/Base_Convenios.xlsx; quien la mantiene actualiza ese
+archivo a mano y extraer.py recoge lo último que haya ahí.
 
 Cada bloque de datos.js lleva su `origen`: el panel marca en pantalla los que
 todavía son de ejemplo.
@@ -33,12 +41,16 @@ import unicodedata
 import urllib.request
 from datetime import date, datetime, timedelta
 
+import openpyxl
+
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SALIDA = os.path.join(AQUI, "datos.js")
 
 URL_CDC = "https://upcg-mbn.github.io/panel_gestion_2026/"
 URL_DCPR = "https://bienesnacionales.github.io/mbn-dcpr-reportes/"
 URL_PRESUPUESTO = "https://presupuestombn.github.io/panel-presupuestario-mbn/"
+URL_GESTION = "https://raw.githubusercontent.com/Upcg-MBN/Panel-Autoridades/main/datos.js"
+RUTA_CONVENIOS = os.path.join(AQUI, "plantillas", "Base_Convenios.xlsx")
 
 SEMILLA = 20260924      # la parte de ejemplo es determinista
 CORTE = "2026-09"       # último mes de los datos de ejemplo; se dibuja como parcial
@@ -92,6 +104,8 @@ _POR_NOMBRE.update({
     "arica": "15", "araucania": "09",
     # El Panel Presupuestario usa el nombre formal completo de la región.
     "libertadorgeneralbernardoohiggins": "06",
+    # El sub-panel «Flujos» del DCPR antepone «Del»/«De» a tres regiones.
+    "delmaule": "07", "denuble": "16", "delbiobio": "08",
 })
 _SIN_MAPEO = set()
 
@@ -174,6 +188,7 @@ def cdc_diplap(fuente):
             detalle.append({
                 "r": r, "i": indicadores.index(nombre(f)),
                 "pond": f["Ponderacion"], "meta": _r4(f["Meta periodo"]),
+                "metaAnual": _r4(f["Meta anual"]),
                 "avance": _r4(f["Avance efectivo"]), "cumpl": _r4(f["Cumplimiento"]),
                 "num": f["Numerador"], "den": f["Denominador"],
                 "causa": (f["Analisis_Causa"] or "").strip(),
@@ -202,8 +217,7 @@ ESTADOS_TRAMITE = {"Tramitado Positivo": "positivo", "Tramitado Negativo": "nega
                    "Enviado a Tribunales": "tribunales", "En Proceso": "enProceso"}
 
 
-def dcpr(fuente):
-    texto = leer(fuente)
+def dcpr(texto, fuente):
     m = re.search(r"const DATA = \{([^}]*)\}", texto)
     if not m:
         raise ValueError("el panel DCPR ya no trae `const DATA = {...}`")
@@ -213,9 +227,30 @@ def dcpr(fuente):
     vacio = lambda: [[None] * len(ms) for _ in REGIONES]
     tit = {"entregados": vacio(), "porEntregar": vacio()}
     tra = {k: vacio() for k in ESTADOS_TRAMITE.values()}
+    ingresos = None  # se queda con el último mes que lo traiga: ver más abajo
 
     for k, (mes, var) in enumerate(pares):
         obj = json.loads(re.search(r"^const %s = (\{.*\});\s*$" % var, texto, re.M).group(1))
+
+        # Panel «A · Nuevos ingresos» del DCPR (distinto del gráfico del mismo
+        # nombre dentro de «D · Flujos», que es otro dataset y va más atrás en
+        # el tiempo). Es del mes en curso, no acumulado en el año: cada mes
+        # reemplaza al anterior, así que al final del bucle queda el último
+        # mes que lo trajo, sin importar si los meses previos también lo traían.
+        ing = obj.get("ingresos")
+        if ing and ing.get("porRegion"):
+            filas_ing = [None] * len(REGIONES)
+            for fila in ing["porRegion"]:
+                r = indice_region(fila[0])
+                if r is not None:
+                    filas_ing[r] = fila[1]
+            if all(v is not None for v in filas_ing):
+                total_ing = sum(filas_ing)
+                publicado_ing = ing.get("totalJunio")  # nombre de campo heredado del sitio: es el total del mes del corte, no de junio
+                if publicado_ing is not None and total_ing != publicado_ing:
+                    raise ValueError("DCPR %s: ingresos por región suman %s y el panel publica %s"
+                                     % (mes, total_ing, publicado_ing))
+                ingresos = {"mes": mes, "total": total_ing, "porRegion": filas_ing}
 
         it = obj.get("informacionTitulos")
         if it:
@@ -252,8 +287,11 @@ def dcpr(fuente):
         for estado, serie in tra.items():
             _cuadra(mes, "tramitadas " + estado, serie, k, publicado[estado])
 
+    if ingresos is None:
+        raise ValueError("el panel DCPR no trae «Nuevos ingresos» por región en ningún mes")
+
     return {"origen": "dcpr", "fuente": fuente, "meses": ms,
-            "titulos": tit, "tramitadas": tra}
+            "titulos": tit, "tramitadas": tra, "ingresos": ingresos}
 
 
 def _cuadra(mes, que, serie, k, publicado):
@@ -264,6 +302,154 @@ def _cuadra(mes, que, serie, k, publicado):
     if suma != publicado:
         raise ValueError("DCPR %s, %s: las regiones suman %s y el informe publica %s"
                          % (mes, que, suma, publicado))
+
+
+# ----------------------------------------------- Gestión Regularización («Flujos»)
+# El mismo panel del DCPR trae, en un iframe aparte («D · Flujos»), un
+# sub-panel con su propio HTML completo codificado en base64
+# (`FLUJOS_HTML_B64`): resoluciones A/B/C (positivas y negativas), casos en
+# proceso (saldo al corte — NO se suma, es una foto) y los que llegan a
+# ingresar al CBR, todo por región y mes, con su propio total «NACIONAL» para
+# comprobar contra la suma de las 16 regiones. Es un dataset distinto del que
+# usa dcpr(): no tiene tramitadas/títulos entregados, que para esos siguen
+# siendo la fuente de siempre. Los «Nuevos ingresos» NO salen de acá: hay un
+# gráfico con ese mismo nombre dentro de Flujos, pero es otro dataset que va
+# más atrás en el tiempo (ver dcpr(), panel «A · Nuevos ingresos»).
+TIPOS_RESOL = ["A", "B", "C"]
+
+
+def _region_flujos(nombre):
+    return None if nombre == "NACIONAL" else indice_region(nombre)
+
+
+def _corte_flujos(por_anio, clave):
+    """Último año-mes de `por_anio[año][clave]['NACIONAL']`, y el mismo mes
+    del año anterior si existe. No asume que coincide con `meses`: proceso_total,
+    por ejemplo, suele ir un mes atrás de lo que lista el año."""
+    for anio in sorted((int(a) for a in por_anio), reverse=True):
+        bloque = por_anio[str(anio)][clave].get("NACIONAL", {})
+        disponibles = [m for m in por_anio[str(anio)]["meses"] if m in bloque]
+        if not disponibles:
+            continue
+        mes = disponibles[-1]
+        num = MESES_ES.index(mes.lower()) + 1
+        previo = por_anio.get(str(anio - 1))
+        hay_previo = bool(previo) and mes in previo[clave].get("NACIONAL", {})
+        return {"anio": anio, "mes": mes, "k": "%d-%02d" % (anio, num),
+                "kAnt": ("%d-%02d" % (anio - 1, num)) if hay_previo else None}
+    raise ValueError("Flujos: %s sin datos" % clave)
+
+
+def regularizacion(texto_dcpr, fuente):
+    m = re.search(r"FLUJOS_HTML_B64\s*=\s*[\"'](.*?)[\"'];", texto_dcpr, re.S)
+    if not m:
+        raise ValueError("el panel DCPR ya no trae `FLUJOS_HTML_B64`")
+    flujos = base64.b64decode(m.group(1)).decode("utf-8")
+
+    def cargar(nombre):
+        mm = re.search(r"const %s\s*=\s*(\{.*?\});\s*\n" % nombre, flujos, re.S)
+        if not mm:
+            raise ValueError("Flujos ya no trae `const %s = {...}`" % nombre)
+        return json.loads(mm.group(1))
+
+    data = cargar("DATA_BY_YEAR")      # resol, proceso_total
+    cbr = cargar("CBR_BY_YEAR")        # cbr (ingresados al CBR)
+
+    cResol = _corte_flujos(data, "resol")
+    cProc = _corte_flujos(data, "proceso_total")
+    cCbr = _corte_flujos(cbr, "cbr")
+
+    def suma(por_anio, clave, anio, nombre_region, hasta_mes):
+        """Σ del mes de enero a `hasta_mes` de ese año, para esa región."""
+        if anio is None or nombre_region is None:
+            return 0
+        bloque = por_anio[str(anio)][clave].get(nombre_region, {})
+        total = 0
+        for mes in por_anio[str(anio)]["meses"]:
+            total += bloque.get(mes) or 0
+            if mes == hasta_mes:
+                break
+        return total
+
+    def suma_resol(anio, nombre_region, hasta_mes, tipo, resultado):
+        if anio is None or nombre_region is None:
+            return 0
+        bloque = data[str(anio)]["resol"].get(nombre_region, {})
+        total = 0
+        for mes in data[str(anio)]["meses"]:
+            total += (bloque.get(mes, {}).get(tipo, {}).get(resultado) or 0)
+            if mes == hasta_mes:
+                break
+        return total
+
+    def proceso_en(anio, nombre_region, mes):
+        if anio is None or nombre_region is None or mes is None:
+            return None
+        return data[str(anio)]["proceso_total"].get(nombre_region, {}).get(mes)
+
+    # Cada dataset trae su propio catálogo de nombres de región: se resuelve
+    # cada uno por separado en vez de asumir que calzan entre sí.
+    regResol = {r: n for n in data[str(cResol["anio"])]["regiones"] for r in [_region_flujos(n)] if r is not None}
+    regCbr = {r: n for n in cbr[str(cCbr["anio"])]["regiones"] for r in [_region_flujos(n)] if r is not None}
+
+    def medida(actual, anterior_o_none):
+        return {"actual": actual, "anterior": anterior_o_none}
+
+    filas = []
+    for r in range(len(REGIONES)):
+        nr, nc = regResol.get(r), regCbr.get(r)
+        pos_a = sum(suma_resol(cResol["anio"], nr, cResol["mes"], t, "POSITIVA") for t in TIPOS_RESOL)
+        neg_a = sum(suma_resol(cResol["anio"], nr, cResol["mes"], t, "NEGATIVA") for t in TIPOS_RESOL)
+        anio_ant = cResol["anio"] - 1 if cResol["kAnt"] else None
+        pos_p = sum(suma_resol(anio_ant, nr, cResol["mes"], t, "POSITIVA") for t in TIPOS_RESOL) if anio_ant else None
+        neg_p = sum(suma_resol(anio_ant, nr, cResol["mes"], t, "NEGATIVA") for t in TIPOS_RESOL) if anio_ant else None
+
+        def tipo_total(anio, tipo):
+            if anio is None:
+                return None
+            return (suma_resol(anio, nr, cResol["mes"], tipo, "POSITIVA")
+                    + suma_resol(anio, nr, cResol["mes"], tipo, "NEGATIVA"))
+
+        fila = {
+            "r": r,
+            "cbr": medida(
+                suma(cbr, "cbr", cCbr["anio"], nc, cCbr["mes"]),
+                suma(cbr, "cbr", cCbr["anio"] - 1, nc, cCbr["mes"]) if cCbr["kAnt"] else None),
+            "proceso": medida(
+                proceso_en(cProc["anio"], nr, cProc["mes"]),
+                proceso_en(cProc["anio"] - 1, nr, cProc["mes"]) if cProc["kAnt"] else None),
+            "positivas": medida(pos_a, pos_p),
+            "negativas": medida(neg_a, neg_p),
+            "resA": medida(tipo_total(cResol["anio"], "A"), tipo_total(anio_ant, "A")),
+            "resB": medida(tipo_total(cResol["anio"], "B"), tipo_total(anio_ant, "B")),
+            "resC": medida(tipo_total(cResol["anio"], "C"), tipo_total(anio_ant, "C")),
+        }
+        filas.append(fila)
+
+    # La suma de las 16 regiones tiene que dar el total «NACIONAL» que trae
+    # Flujos, igual que con el DCPR: si no cuadra, no se escribe.
+    def exigir_cuadra(campo, nacional):
+        suma_filas = sum(f[campo]["actual"] for f in filas)
+        if suma_filas != nacional:
+            raise ValueError("Flujos %s: las 16 regiones suman %s y NACIONAL da %s"
+                             % (campo, suma_filas, nacional))
+
+    exigir_cuadra("cbr", suma(cbr, "cbr", cCbr["anio"], "NACIONAL", cCbr["mes"]))
+    exigir_cuadra("positivas", sum(suma_resol(cResol["anio"], "NACIONAL", cResol["mes"], t, "POSITIVA") for t in TIPOS_RESOL))
+    exigir_cuadra("negativas", sum(suma_resol(cResol["anio"], "NACIONAL", cResol["mes"], t, "NEGATIVA") for t in TIPOS_RESOL))
+    proceso_nacional = proceso_en(cProc["anio"], "NACIONAL", cProc["mes"])
+    suma_proceso = sum(f["proceso"]["actual"] for f in filas)
+    if suma_proceso != proceso_nacional:
+        raise ValueError("Flujos proceso: las 16 regiones suman %s y NACIONAL da %s"
+                         % (suma_proceso, proceso_nacional))
+
+    return {
+        "origen": "dcpr-flujos", "fuente": fuente,
+        "corteResol": cResol["k"], "corteResolAnterior": cResol["kAnt"],
+        "corteProceso": cProc["k"], "corteProcesoAnterior": cProc["kAnt"],
+        "corteCbr": cCbr["k"], "corteCbrAnterior": cCbr["kAnt"],
+        "filas": filas,
+    }
 
 
 # --------------------------------------------------------- presupuesto CDC
@@ -309,6 +495,228 @@ def presupuesto_cdc(fuente):
             "budget": budget, "dev": dev, "filas": filas}
 
 
+# ------------------------------------------------------- §2.4a gestión de Bienes
+# Panel-Autoridades (de donde publica DASHBOARD SUBSE) ya trae, para 17
+# trámites y 16 SEREMIs, un cubo real `[mes, región, trámite, ingresados,
+# finalizados, bajas]` desde 1998, en JSON válido (a diferencia del panel
+# presupuestario). Aquí se toman solo los trámites acordados y se conserva la
+# serie COMPLETA, no solo el año en curso: el stock («mochila») es un
+# acumulado de ingresos menos bajas desde el inicio de la base, y recortarlo
+# al año actual daría un stock que no cuadra con nada.
+TRAMITES_BIENES = [
+    ("Concesion OLP", "Concesión OLP"),
+    ("Servidumbres", "Servidumbres"),
+    ("Arriendo", "Arriendo"),
+    ("Aprovechamiento de Aguas", "Aprovechamiento de Aguas"),
+    ("Venta", "Venta"),
+    ("Ventas por Propuesta Pública", "Ventas por Propuesta Pública"),
+]
+
+
+def gestion_bienes(fuente):
+    texto = leer(fuente)
+    m = re.search(r"window\.DATOS\s*=\s*(\{.*\});?\s*$", texto, re.S)
+    if not m:
+        raise ValueError("Panel-Autoridades ya no trae `window.DATOS = {...}`")
+    src = json.loads(m.group(1))
+
+    remap_region = {i: _INDICE.get(r["codigo"]) for i, r in enumerate(src["regiones"])}
+    nuestro_indice = {nombre: i for i, (nombre, _) in enumerate(TRAMITES_BIENES)}
+    nombres_fuente = {t["nombre"] for t in src["tramites"]}
+    faltan = [n for n, _ in TRAMITES_BIENES if n not in nombres_fuente]
+    if faltan:
+        raise ValueError("Panel-Autoridades ya no trae el trámite: %s" % ", ".join(faltan))
+    remap_tramite = {i: nuestro_indice[t["nombre"]]
+                      for i, t in enumerate(src["tramites"]) if t["nombre"] in nuestro_indice}
+
+    cubo_src = src["cubo"]
+    if len(cubo_src) % 6:
+        raise ValueError("Panel-Autoridades: el cubo no es múltiplo de 6 (¿cambió el formato?)")
+
+    cubo = []
+    for i in range(0, len(cubo_src), 6):
+        m_, r_, t_, ing, fin, baja = cubo_src[i:i + 6]
+        if t_ not in remap_tramite:
+            continue
+        r2 = remap_region.get(r_)
+        if r2 is None:
+            continue        # «00 Sin región»: no hay SEREMI a la que atribuirlo
+        cubo.extend([m_, r2, remap_tramite[t_], ing, fin, baja])
+    if not cubo:
+        raise ValueError("Panel-Autoridades: sin filas para los trámites de Bienes elegidos")
+
+    return {
+        "origen": "panel-autoridades", "fuente": fuente,
+        "meses": src["meses"], "mes_parcial": src["mes_parcial"],
+        "tramites": [{"nombre": n} for _, n in TRAMITES_BIENES],
+        "cubo": cubo,
+    }
+
+
+# ---------------------------------------------------- Gestión de Convenios
+# Base_Convenios.xlsx trae dos hojas con columnas distintas:
+#   «Convenios FT»   — convenios formalizados, vigentes y no vigentes.
+#   «En trámite»     — convenios en proceso de negociación o firma.
+# Ambas traen la región en texto libre, mezclada con unidades nacionales
+# (DIPLAP, GABSUB, DBN, DCPR, DICAT) y alguna nota suelta que no es una
+# SEREMI. Esas filas se omiten en silencio: no es un error de captura como en
+# las demás fuentes (`_fallo`/`_SIN_MAPEO` es para avisar de algo que debería
+# haber calzado y no calzó), es exactamente lo que el documento pide excluir.
+MATERIAS_CONVENIO = ["Propiedad fiscal", "Regularización", "Mixto", "Otro"]
+
+# «En trámite» no trae una columna de Materia cerrada como «Convenios FT»: su
+# «MATERIA (referencial)» es texto libre, así que se homologa por palabra
+# clave a las mismas 4 categorías. Los números de ley (2.695/1979 y
+# 1.939/1977, las dos normas de regularización) cuentan como «Regularización»
+# aunque el texto no use la palabra «regulariza».
+_MATERIA_PROPIEDAD_KW = ("fiscal", "catastro", "geoespacial")
+_MATERIA_REGULARIZACION_KW = ("regulariz", "saneamiento", "titulo gratuito",
+                               "2.695", "2695", "1.939", "1939", "19.776", "19776")
+
+
+def _texto_plano(valor):
+    """Como `_clave`, pero sin sacar dígitos ni el prefijo «seremi/región»:
+    sirve para buscar palabras clave en texto libre, no nombres de región."""
+    return unicodedata.normalize("NFKD", str(valor or "")).encode("ascii", "ignore").decode().lower()
+
+
+def _homologar_materia(valor):
+    t = _texto_plano(valor)
+    prop = any(k in t for k in _MATERIA_PROPIEDAD_KW)
+    reg = any(k in t for k in _MATERIA_REGULARIZACION_KW)
+    if prop and reg:
+        return "Mixto"
+    if reg:
+        return "Regularización"
+    if prop:
+        return "Propiedad fiscal"
+    return "Otro"
+
+
+def _region_en_texto(valor):
+    """Para «RESPONSABLE MBN» («Seremi Los Lagos», «DCPR - Seremi O'Higgins»):
+    el nombre de la SEREMI va embebido en más texto, así que se busca como
+    substring (el más largo que calce) en vez de exigir una coincidencia
+    exacta como `normalizar_region`. Lo que no trae ninguna región reconocible
+    («SNIT», «DBN - UGTP», «DIVAD - DIJUR») no es un error, es un convenio de
+    alcance nacional: se omite sin avisar."""
+    if not valor:
+        return None
+    t = _clave(valor)
+    mejor = None
+    for clave, codigo in _POR_NOMBRE.items():
+        if clave and clave in t and (mejor is None or len(clave) > len(mejor[0])):
+            mejor = (clave, codigo)
+    return _INDICE.get(mejor[1]) if mejor else None
+
+
+def _region_directa(valor):
+    """Para «Región/División»: el valor YA es (o debería ser) un nombre de
+    región. Va directo a `_POR_NOMBRE`, sin pasar por `normalizar_region`,
+    para no marcar con `_SIN_MAPEO` las filas de DIPLAP/GABSUB/DBN/DCPR/DICAT
+    ni las notas sueltas de la planilla: omitirlas es la regla, no un aviso."""
+    if valor is None:
+        return None
+    codigo = _POR_NOMBRE.get(_clave(valor))
+    return _INDICE.get(codigo) if codigo else None
+
+
+def _monto(valor):
+    if valor is None:
+        return None
+    if isinstance(valor, (int, float)):
+        return round(valor)
+    digitos = re.sub(r"[^\d]", "", str(valor))
+    return int(digitos) if digitos else None
+
+
+def _fecha_excel(valor):
+    if valor is None:
+        return None
+    if hasattr(valor, "date") and callable(valor.date):
+        valor = valor.date()
+    return valor.isoformat() if hasattr(valor, "isoformat") else None
+
+
+def _encabezados(ws):
+    """Encabezados con espacios de más («Monto  Convenio ») colapsados a uno
+    solo: la planilla la edita una persona en Excel, no un sistema, y ese
+    tipo de variación no debería botar la carga."""
+    fila = next(ws.iter_rows(min_row=1, max_row=1))
+    return {" ".join(str(c.value or "").split()): i for i, c in enumerate(fila)}
+
+
+def convenios(fuente):
+    wb = openpyxl.load_workbook(fuente, data_only=True)
+    for hoja in ("Convenios FT", "En trámite"):
+        if hoja not in wb.sheetnames:
+            raise ValueError("Base_Convenios.xlsx ya no trae la hoja «%s»" % hoja)
+    idx_materia = {m: i for i, m in enumerate(MATERIAS_CONVENIO)}
+
+    ws = wb["Convenios FT"]
+    col = _encabezados(ws)
+    requeridas = ["Región/División", "Tipo Otorgante", "Entidad Otorgante", "Nombre Convenio",
+                  "Inicio", "Fin", "Monto Convenio", "Estado", "Fecha corte", "Materia"]
+    faltan = [c for c in requeridas if c not in col]
+    if faltan:
+        raise ValueError("Base_Convenios.xlsx, hoja «Convenios FT»: faltan columnas %s" % faltan)
+    ft, cortes = [], set()
+    for fila in ws.iter_rows(min_row=2, values_only=True):
+        r = _region_directa(fila[col["Región/División"]])
+        if r is None:
+            continue
+        nombre = fila[col["Nombre Convenio"]]
+        if not nombre or not str(nombre).strip():
+            raise ValueError("Convenios FT: fila con región %s y sin Nombre Convenio" % fila[col["Región/División"]])
+        materia = fila[col["Materia"]]
+        if materia not in idx_materia:
+            raise ValueError("Convenios FT: convenio %r sin Materia válida (valor: %r)" % (nombre, materia))
+        corte = _fecha_excel(fila[col["Fecha corte"]])
+        if corte:
+            cortes.add(corte)
+        ft.append({
+            "r": r, "materia": idx_materia[materia], "nombre": str(nombre).strip(),
+            "inicio": _fecha_excel(fila[col["Inicio"]]), "fin": _fecha_excel(fila[col["Fin"]]),
+            "tipoOtorgante": (fila[col["Tipo Otorgante"]] or "").strip(),
+            "entidadOtorgante": (fila[col["Entidad Otorgante"]] or "").strip(),
+            "monto": _monto(fila[col["Monto Convenio"]]),
+            "vigente": fila[col["Estado"]] == "Vigente",
+        })
+
+    ws = wb["En trámite"]
+    col = _encabezados(ws)
+    requeridas = ["NOMBRE CONVENIO", "MATERIA (referencial)", "MONTO", "RESPONSABLE MBN", "ORGANISMO EXTERNO"]
+    faltan = [c for c in requeridas if c not in col]
+    if faltan:
+        raise ValueError("Base_Convenios.xlsx, hoja «En trámite»: faltan columnas %s" % faltan)
+    tramite = []
+    for fila in ws.iter_rows(min_row=2, values_only=True):
+        nombre = fila[col["NOMBRE CONVENIO"]]
+        if not nombre or not str(nombre).strip():
+            continue        # fila en blanco al final de la hoja, no un dato
+        r = _region_en_texto(fila[col["RESPONSABLE MBN"]])
+        if r is None:
+            continue
+        tramite.append({
+            "r": r, "materia": idx_materia[_homologar_materia(fila[col["MATERIA (referencial)"]])],
+            "nombre": str(nombre).strip(),
+            "organismoExterno": (fila[col["ORGANISMO EXTERNO"]] or "").strip(),
+            "monto": _monto(fila[col["MONTO"]]),
+        })
+
+    if not ft:
+        raise ValueError("Base_Convenios.xlsx: «Convenios FT» sin filas con región reconocida")
+    if not tramite:
+        raise ValueError("Base_Convenios.xlsx: «En trámite» sin filas con región reconocida")
+
+    return {
+        "origen": "excel-local", "fuente": fuente,
+        "corte": max(cortes) if cortes else None,
+        "materias": MATERIAS_CONVENIO,
+        "ft": ft, "tramite": tramite,
+    }
+
+
 # ------------------------------------------------------------- §2.3 catastro
 # `compara`: el indicador se mide contra el trimestre anterior y entra al
 # semáforo. La superficie fiscal no: bajar superficie fiscal puede ser
@@ -327,12 +735,6 @@ CATASTRO = [
     ("UC con acto de administración vigente", "N°", True),
     ("UC parcialmente administradas", "N°", False),
 ]
-
-# ------------------------------------------------- §2.4a gestión de Bienes
-# De ejemplo. Falta decidir qué es «gestión»: actos dictados (planilla manual
-# de DBN) o casos finalizados en el sistema (base GXP). Ver README.
-TRAMITES = ["Arriendo", "Venta", "Transferencia Gratuita", "Destinaciones",
-            "Concesión GCP", "Concesión OLP", "Desafectaciones", "Servidumbres"]
 
 # ------------------------------------------------- §2.5 gobierno en terreno
 COMUNAS = {
@@ -378,7 +780,6 @@ def construir_demo():
     con semilla fija. Sirven para validar estructura y navegación, NUNCA para
     tomar decisiones."""
     az = random.Random(SEMILLA)
-    ms_ges = meses("2025-09", CORTE)
     # El trimestre en curso todavía no cierra: no se muestra.
     tris = sorted({trimestre(m) for m in meses("2025-07", CORTE)})[:-1]
 
@@ -419,24 +820,6 @@ def construir_demo():
             serie.append([adm + ter + par, round(sup), adm, ter, par])
         valores.append(serie)
 
-    # --- §2.4a cubo plano [mes, región, trámite, n], como el cubo de SUBSE
-    # Cada par región-trámite sigue un nivel con deriva suave y ruido chico, no
-    # un sorteo independiente por mes: con valores al azar la variación mes a
-    # mes es enorme y todas las SEREMIs saldrían en rojo por ruido del demo.
-    cubo = []
-    for r in range(len(REGIONES)):
-        escala = az.uniform(0.4, 3.0)           # la Metropolitana pesa más
-        for t in range(len(TRAMITES)):
-            nivel = az.uniform(1, 40) * escala
-            deriva = az.uniform(0.97, 1.03)     # la tendencia propia del par
-            for m in range(len(ms_ges)):
-                nivel *= deriva * az.uniform(0.95, 1.05)
-                # El mes de corte va a la mitad: el panel lo marca como parcial.
-                parcial = 0.6 if m == len(ms_ges) - 1 else 1.0
-                n = int(round(nivel * parcial))
-                if n:
-                    cubo.extend([m, r, t, n])
-
     # --- §2.5 gobierno en terreno: quincenas, comunas y minutas
     quincenas = []
     for m in meses("2026-06", CORTE):
@@ -461,9 +844,6 @@ def construir_demo():
                      "indicadores": [{"nombre": n, "unidad": u, "compara": c}
                                      for n, u, c in CATASTRO],
                      "valores": valores},
-        "gestion": {"origen": "demo", "meses": ms_ges,
-                    "tramites": [{"nombre": n} for n in TRAMITES],
-                    "cubo": cubo},
         "terreno": {"origen": "demo", "quincenas": quincenas, "salidas": salidas},
     }
 
@@ -498,6 +878,18 @@ def comprobar(p):
     exigir(len(d["meses"]) >= 2, "el DCPR trae menos de dos meses: no hay periodo anterior")
     exigir(d["titulos"]["entregados"][0][-1] is not None, "el DCPR no trae títulos del último mes")
     exigir(d["tramitadas"]["positivo"][0][-1] is not None, "el DCPR no trae tramitadas del último mes")
+    exigir(len(d["ingresos"]["porRegion"]) == nr, "ingresos (panel A) sin una fila por SEREMI")
+    exigir(sum(d["ingresos"]["porRegion"]) == d["ingresos"]["total"],
+           "ingresos (panel A): las 16 regiones no suman el total publicado")
+
+    reg = p["regularizacion"]
+    exigir(len(reg["filas"]) == nr, "Flujos sin una fila por SEREMI")
+    for campo in ("cbr", "proceso", "positivas", "negativas", "resA", "resB", "resC"):
+        exigir(all(f[campo]["actual"] is not None and f[campo]["actual"] >= 0 for f in reg["filas"]),
+               "Flujos: %s con valores inválidos" % campo)
+    exigir(all(f["resA"]["actual"] + f["resB"]["actual"] + f["resC"]["actual"]
+               == f["positivas"]["actual"] + f["negativas"]["actual"] for f in reg["filas"]),
+           "Flujos: resoluciones A+B+C no cuadra con positivas+negativas")
 
     for o in p["oficios"]["items"]:
         exigir(0 <= o["r"] < nr, "oficio con SEREMI fuera de rango")
@@ -515,13 +907,26 @@ def comprobar(p):
                "catastro: las tres categorías de tenencia no suman el total de UC")
 
     g = p["gestion"]
-    exigir(len(g["cubo"]) % 4 == 0, "el cubo de gestión no es múltiplo de 4")
-    for i in range(0, len(g["cubo"]), 4):
-        m, r, t, n = g["cubo"][i:i + 4]
-        exigir(0 <= m < len(g["meses"]) and 0 <= r < nr
-               and 0 <= t < len(g["tramites"]) and n > 0,
-               "celda inválida en el cubo de gestión: %s" % g["cubo"][i:i + 4])
-    exigir(g["meses"][-1] == p["corte"], "el último mes de gestión no es el corte")
+    exigir(len(g["cubo"]) % 6 == 0, "el cubo de gestión no es múltiplo de 6")
+    exigir(g["mes_parcial"] in g["meses"], "gestión: mes_parcial no está en meses")
+    tramites_vistos = set()
+    for i in range(0, len(g["cubo"]), 6):
+        m, r, t, ing, fin, baja = g["cubo"][i:i + 6]
+        exigir(0 <= m < len(g["meses"]) and 0 <= r < nr and 0 <= t < len(g["tramites"]),
+               "celda inválida en el cubo de gestión: %s" % g["cubo"][i:i + 6])
+        exigir(ing >= 0 and fin >= 0 and baja >= 0,
+               "gestión: valores negativos en %s" % g["cubo"][i:i + 6])
+        tramites_vistos.add(t)
+    exigir(len(tramites_vistos) == len(g["tramites"]),
+           "gestión: falta al menos uno de los %d trámites en todo el cubo" % len(g["tramites"]))
+
+    cv = p["convenios"]
+    exigir(len(cv["ft"]) > 0, "Convenios FT: sin filas")
+    exigir(len(cv["tramite"]) > 0, "Convenios en trámite: sin filas")
+    for fila in cv["ft"] + cv["tramite"]:
+        exigir(0 <= fila["r"] < nr, "Convenios: fila con región fuera de rango")
+        exigir(0 <= fila["materia"] < len(cv["materias"]), "Convenios: fila con materia fuera de rango")
+        exigir(fila["monto"] is None or fila["monto"] >= 0, "Convenios: monto negativo en %r" % fila["nombre"])
 
     ter = p["terreno"]
     for s in ter["salidas"]:
@@ -554,8 +959,13 @@ def main():
         payload = construir_demo()
         payload["regiones"] = [{"codigo": c, "nombre": n} for c, n in REGIONES]
         payload["cdc"] = cdc_diplap(os.environ.get("FUENTE_CDC", URL_CDC))
-        payload["dcpr"] = dcpr(os.environ.get("FUENTE_DCPR", URL_DCPR))
+        fuente_dcpr = os.environ.get("FUENTE_DCPR", URL_DCPR)
+        texto_dcpr = leer(fuente_dcpr)  # una sola bajada: dcpr() y regularizacion() leen la misma página
+        payload["dcpr"] = dcpr(texto_dcpr, fuente_dcpr)
+        payload["regularizacion"] = regularizacion(texto_dcpr, fuente_dcpr)
         payload["presupuesto"] = presupuesto_cdc(os.environ.get("FUENTE_PRESUPUESTO", URL_PRESUPUESTO))
+        payload["gestion"] = gestion_bienes(os.environ.get("FUENTE_GESTION", URL_GESTION))
+        payload["convenios"] = convenios(os.environ.get("FUENTE_CONVENIOS", RUTA_CONVENIOS))
         payload["generado"] = datetime.now().replace(microsecond=0).isoformat()
         comprobar(payload)
         tam = escribir(payload)
@@ -567,10 +977,13 @@ def main():
     if _SIN_MAPEO:
         print("AVISO: regiones sin código, descartadas: %s"
               % ", ".join(sorted(_SIN_MAPEO)), file=sys.stderr)
-    print("datos.js -> CDC a %s (%d indicadores), DCPR a %s, presupuesto CDC a %s, %.1f KB"
+    print("datos.js -> CDC a %s (%d indicadores), DCPR a %s, regularización a %s, presupuesto CDC a %s, gestión Bienes a %s, "
+          "convenios FT %d / trámite %d, %.1f KB"
           % (payload["cdc"]["meses"][-1], len(payload["cdc"]["filas"]),
-             payload["dcpr"]["meses"][-1], payload["presupuesto"]["corte"], tam / 1024))
-    print("            oficios, catastro, gestión de Bienes y terreno: DATOS DE EJEMPLO")
+             payload["dcpr"]["meses"][-1], payload["regularizacion"]["corteResol"],
+             payload["presupuesto"]["corte"], payload["gestion"]["mes_parcial"],
+             len(payload["convenios"]["ft"]), len(payload["convenios"]["tramite"]), tam / 1024))
+    print("            oficios, catastro y terreno: DATOS DE EJEMPLO")
     return 0
 
 

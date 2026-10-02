@@ -21,11 +21,13 @@ var M = {
     // [Σ contrib. cumplimiento, Σ contrib. meta] por SEREMI y mes
     sumas: [[[0.5, 1], [0.6, 1]],        // 60 %: crítico
             [[0.9, 1], [0.95, 1]]],      // 95 %: al día
+    // meta: la meta YA prorrateada al periodo (lo que usa el cumplimiento);
+    // metaAnual: la meta del año completo, tal cual la trae DIPLAP.
     filas: [
-      { r: 0, i: 0, pond: 0.5, meta: 0.8, avance: 0.88, cumpl: 1.1 },
-      { r: 0, i: 1, pond: 0.5, meta: 0.8, avance: 0.32, cumpl: 0.4 },
-      { r: 1, i: 0, pond: 0.5, meta: 0.9, avance: 0.855, cumpl: 0.95 },
-      { r: 1, i: 1, pond: 0.5, meta: 0.9, avance: 0.8, cumpl: 0.89 }
+      { r: 0, i: 0, pond: 0.5, meta: 0.8, metaAnual: 0.95, avance: 0.88, cumpl: 1.1 },
+      { r: 0, i: 1, pond: 0.5, meta: 0.8, metaAnual: 0.95, avance: 0.32, cumpl: 0.4 },
+      { r: 1, i: 0, pond: 0.5, meta: 0.9, metaAnual: 0.9, avance: 0.855, cumpl: 0.95 },
+      { r: 1, i: 1, pond: 0.5, meta: 0.9, metaAnual: 0.9, avance: 0.8, cumpl: 0.89 }
     ]
   },
   dcpr: {
@@ -51,15 +53,25 @@ var M = {
     valores: [[[100, 100, 300], [110, 50, 300]],     // +10 % y −50 %
               [[100, 100, 100], [100, 100, 50]]]     // la superficie cae, pero no compara
   },
+  // 15 meses, de 2025-01 (índice 0) a 2026-03 (índice 14, el parcial). El año
+  // «actual» es 2026 (solo enero a marzo, índices 12-14); el «anterior» es el
+  // mismo tramo de 2025 (índices 0-2). Región 1 (Magallanes) no tiene fila de
+  // «Uno» en el periodo anterior: variación null, no un error.
   gestion: {
-    meses: ['2026-01', '2026-02', '2026-03'],   // 2026-03 es el parcial
-    tramites: [{ nombre: 'Uno' }, { nombre: 'Dos' }, { nombre: 'Tres' }],
+    meses: ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06',
+             '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12',
+             '2026-01', '2026-02', '2026-03'],
+    mes_parcial: '2026-03',
+    tramites: [{ nombre: 'Uno' }, { nombre: 'Dos' }],
     cubo: [
-      // mes, región, trámite, n
-      0, 0, 0, 100, 1, 0, 0, 90,  2, 0, 0, 10,
-      0, 0, 1, 50,  1, 0, 1, 60,  2, 0, 1, 5,
-      0, 0, 2, 10,  1, 0, 2, 10,
-      0, 1, 0, 7,   1, 1, 0, 7,   2, 1, 0, 3
+      // mes, región, trámite, ingresados, finalizados, bajas
+      0, 0, 0, 10, 6, 4,     // Uno, Arica,      2025-01 (año anterior; neto +6)
+      6, 0, 0, 15, 5, 5,     // Uno, Arica,      2025-07 (antes del 31-12; neto +10, para el rezago)
+      12, 0, 0, 20, 12, 8,   // Uno, Arica,      2026-01 (año actual)
+      12, 0, 1, 5, 1, 1,     // Dos, Arica,      2026-01 (año actual)
+      12, 1, 0, 3, 3, 3,     // Uno, Magallanes, 2026-01 (año actual)
+      0, 1, 1, 5, 10, 10,    // Dos, Magallanes, 2025-01 (año anterior)
+      12, 1, 1, 1, 2, 2      // Dos, Magallanes, 2026-01 (año actual)
     ]
   },
   terreno: {
@@ -76,6 +88,42 @@ var M = {
     filas: [
       { r: 0, presupuesto: 100, devengado: 70, pct: 0.7, meta: 0.65 },    // cumple
       { r: 1, presupuesto: 200, devengado: 90, pct: 0.45, meta: 0.65 }    // no cumple
+    ]
+  },
+  regularizacion: {
+    corteResol: '2026-08', corteResolAnterior: '2025-08',
+    corteProceso: '2026-07', corteProcesoAnterior: '2025-07',
+    corteCbr: '2026-08', corteCbrAnterior: '2025-08',
+    filas: [
+      { r: 0,
+        cbr: { actual: 20, anterior: 15 },
+        proceso: { actual: 500, anterior: 480 },
+        positivas: { actual: 30, anterior: 25 }, negativas: { actual: 10, anterior: 8 },
+        resA: { actual: 25, anterior: 20 }, resB: { actual: 10, anterior: 8 }, resC: { actual: 5, anterior: 5 } },
+      { r: 1,
+        cbr: { actual: 5, anterior: 10 },
+        proceso: { actual: 200, anterior: 220 },
+        positivas: { actual: 12, anterior: 10 }, negativas: { actual: 4, anterior: null },  // año anterior sin dato SOLO acá
+        resA: { actual: 8, anterior: 9 }, resB: { actual: 5, anterior: 4 }, resC: { actual: 3, anterior: 3 } }
+    ]
+  },
+  // Foto sin serie mensual, como presupuesto. Materias: 0 Propiedad fiscal,
+  // 1 Regularización, 2 Mixto, 3 Otro. Conv B (no vigente) prueba que
+  // «vigentes» y su monto NO suman convenios vencidos.
+  convenios: {
+    corte: '2026-08-31',
+    materias: ['Propiedad fiscal', 'Regularización', 'Mixto', 'Otro'],
+    ft: [
+      { r: 0, materia: 1, nombre: 'Conv A', inicio: '2020-01-01', fin: '2026-12-31',
+        tipoOtorgante: 'GORE', entidadOtorgante: 'Gobierno Regional Arica', monto: 1000, vigente: true },
+      { r: 0, materia: 0, nombre: 'Conv B', inicio: '2018-01-01', fin: '2024-12-31',
+        tipoOtorgante: 'CONADI', entidadOtorgante: 'CONADI', monto: 500, vigente: false },
+      { r: 1, materia: 1, nombre: 'Conv C', inicio: '2021-01-01', fin: '2027-12-31',
+        tipoOtorgante: 'GORE', entidadOtorgante: 'Gobierno Regional Magallanes', monto: 2000, vigente: true }
+    ],
+    tramite: [
+      { r: 0, materia: 1, nombre: 'Trm A', organismoExterno: 'IM Arica', monto: 300 },
+      { r: 1, materia: 2, nombre: 'Trm B', organismoExterno: 'IM Natales', monto: 0 }
     ]
   }
 };
@@ -110,6 +158,12 @@ prueba('CDC lista los indicadores bajo 90 % aunque el global esté al día', fun
   var c1 = AGG.cdc(M, 1);
   assert.strictEqual(AGG.estadoCumpl(c1.global), 'bueno');
   assert.deepStrictEqual(c1.bajo.map(function (f) { return f.cumpl; }), [0.89]);
+});
+
+prueba('CDC: metaAnual viaja junto a meta (al periodo), no se mezclan', function () {
+  var f = AGG.cdc(M, 0).indicadores[0];
+  assert.strictEqual(f.meta, 0.8);
+  assert.strictEqual(f.metaAnual, 0.95);
 });
 
 prueba('DCPR: la variación es cuánto creció el acumulado desde el informe anterior', function () {
@@ -171,19 +225,71 @@ prueba('catastro compara cada SEREMI con su trimestre anterior', function () {
   assert.strictEqual(AGG.catastro(M, 1)[0].variacion, 0);
 });
 
-prueba('gestión compara los dos últimos meses COMPLETOS, nunca el parcial', function () {
-  var g = AGG.gestion(M, 0, 4);
-  assert.strictEqual(g[0].tramite, 'Uno');
-  assert.strictEqual(g[0].actual, 90);            // 2026-02, no el parcial 2026-03
-  assert.strictEqual(g[0].anterior, 100);         // 2026-01
-  assert.strictEqual(g[0].parcial, 10);
-  assert.ok(Math.abs(g[0].variacion + 0.1) < 1e-9);
-  assert.strictEqual(g[0].total, 200);            // el total sí incluye el parcial
+prueba('gestión de Bienes: ingresados/finalizados del año a la fecha contra el mismo tramo del año anterior', function () {
+  var x = AGG.bienes(M, { region: null, tramites: ['Uno'] });
+  assert.strictEqual(x.anioActual, '2026');
+  assert.strictEqual(x.anioAnterior, '2025');
+  assert.strictEqual(x.kpi.ing.actual, 23);       // Arica 20 + Magallanes 3, año actual
+  assert.strictEqual(x.kpi.ing.anterior, 10);     // solo Arica tiene fila anterior
+  assert.ok(Math.abs(x.kpi.ing.variacion - 1.3) < 1e-9);
+  assert.strictEqual(x.kpi.fin.actual, 15);
+  assert.strictEqual(x.kpi.fin.anterior, 6);
 });
 
-prueba('gestión ordena por total y corta en el top pedido', function () {
-  assert.deepStrictEqual(AGG.gestion(M, 0, 4).map(function (x) { return x.tramite; }), ['Uno', 'Dos', 'Tres']);
-  assert.strictEqual(AGG.gestion(M, 0, 2).length, 2);
+prueba('gestión de Bienes: el stock es un acumulado desde el inicio, no solo del año elegido', function () {
+  var x = AGG.bienes(M, { region: null, tramites: ['Uno'] });
+  // Arica: el neto es ingresados-BAJAS, no ingresados-finalizados:
+  // 2025-01 neto 10-4=6; 2025-07 neto 15-5=10; 2026-01 neto 20-8=12.
+  // Magallanes 2026-01 neto 3-3=0.
+  assert.strictEqual(x.kpi.moc.actual, 28);       // 6 + 10 + 12 + 0, acumulado hasta 2026-03
+  assert.strictEqual(x.kpi.moc.anterior, 6);      // solo lo acumulado hasta 2025-03
+});
+
+prueba('gestión de Bienes: rezago es el stock a dic-2025 menos las bajas posteriores, nunca bajo cero', function () {
+  var x = AGG.bienes(M, { region: null, tramites: ['Uno'] });
+  // Stock a 2025-12 (antes del año actual): 6 (2025-01) + 10 (2025-07) = 16.
+  // Bajas desde 2026-01 al corte: 8 (Arica) + 3 (Magallanes) = 11.
+  assert.strictEqual(x.kpi.rezago.base, 16);
+  assert.strictEqual(x.kpi.rezago.actual, 5);     // 16 - 11
+
+  // Con más bajas que rezago disponible, no debe dar negativo.
+  var soloMagallanes = AGG.bienes(M, { region: '12', tramites: ['Uno'] });
+  assert.strictEqual(soloMagallanes.kpi.rezago.base, 0);   // sin movimientos antes de 2026
+  assert.strictEqual(soloMagallanes.kpi.rezago.actual, 0); // max(0, 0 - 3), no -3
+});
+
+prueba('gestión de Bienes: el rezago también se calcula por trámite, no solo el total', function () {
+  var x = AGG.bienes(M, { region: null, tramites: null });   // todos los trámites, todas las regiones
+  var uno = x.porTramite.filter(function (t) { return t.nombre === 'Uno'; })[0];
+  var dos = x.porTramite.filter(function (t) { return t.nombre === 'Dos'; })[0];
+  assert.strictEqual(uno.rezago.base, 16);     // igual que el total filtrado a «Uno» solo
+  assert.strictEqual(uno.rezago.actual, 5);
+  // «Dos» en Magallanes: 2025-01 neto 5-10=-5 (dic-2025: -5, nunca bajo 0 en el total,
+  // pero aquí se mira antes del max del total) + Arica no tiene «Dos» antes de dic-2025.
+  assert.strictEqual(dos.rezago.base, -5);
+  assert.strictEqual(dos.rezago.actual, 0);    // max(0, -5 - bajas) sigue en 0
+});
+
+prueba('gestión de Bienes: el filtro de trámites recorta porTramite y los totales', function () {
+  var x = AGG.bienes(M, { region: '15', tramites: null });
+  assert.strictEqual(x.porTramite.length, 2);
+  var uno = x.porTramite.filter(function (t) { return t.nombre === 'Uno'; })[0];
+  var dos = x.porTramite.filter(function (t) { return t.nombre === 'Dos'; })[0];
+  assert.strictEqual(uno.ing.actual, 20);
+  assert.strictEqual(dos.ing.actual, 5);
+  assert.strictEqual(dos.ing.anterior, 0);
+  assert.strictEqual(dos.ing.variacion, null);    // sin base el año anterior: null, no +Infinity
+
+  var soloUno = AGG.bienes(M, { region: '15', tramites: ['Uno'] });
+  assert.strictEqual(soloUno.porTramite.length, 1);
+  assert.strictEqual(soloUno.kpi.ing.actual, 20); // ya no suma el «Dos»
+});
+
+prueba('gestión de Bienes: porRegion respeta solo el filtro de trámites, nunca el de región', function () {
+  var x = AGG.bienes(M, { region: '15', tramites: null });   // filtrado a Arica
+  assert.strictEqual(x.porRegion.length, 2);                 // las 2 igual salen
+  var magallanes = x.porRegion.filter(function (r) { return r.codigo === '12'; })[0];
+  assert.strictEqual(magallanes.ing.actual, 4);              // 3 (Uno) + 1 (Dos)
 });
 
 prueba('terreno cuenta quincenas sin reportar desde la última CERRADA hacia atrás', function () {
@@ -212,6 +318,17 @@ prueba('el semáforo toma el peor estado de cada dimensión', function () {
   assert.strictEqual(s[1].celdas.catastro, 'bueno');     // la superficie cayó, pero no compara
   assert.strictEqual(s[1].celdas.oficios, 'critico');    // 89 días de espera
   assert.strictEqual(s[1].celdas.terreno, 'alerta');
+  assert.strictEqual(s[0].celdas.gestion, 'bueno');       // finalizados subieron vs 2025
+  assert.strictEqual(s[1].celdas.gestion, 'critico');     // finalizados cayeron 50 % vs 2025
+});
+
+prueba('catastro no genera alertas (sigue con datos de ejemplo, sin umbral acordado)', function () {
+  // Arica (r=0) cae 50 % en «Sube», que de por sí dispara alerta crítica por
+  // REGLAS.caidaFuerte: la celda del semáforo SÍ queda en «critico» (se sigue
+  // calculando), pero no debe aparecer como alerta en la lista.
+  assert.strictEqual(AGG.semaforo(M)[0].celdas.catastro, 'critico');
+  var a = AGG.alertas(AGG.semaforo(M));
+  assert.ok(a.every(function (x) { return x.dimension !== 'Catastro'; }), 'catastro no debe generar alertas');
 });
 
 prueba('cada alerta trae su motivo escrito, las críticas primero y luego norte a sur', function () {
@@ -243,6 +360,57 @@ prueba('presupuesto: filtrado por SEREMI trae solo su propia fila', function () 
   assert.strictEqual(x1.enMeta, 0);     // 45 % < 65 % de meta
 });
 
+prueba('regularización: con todas suma los campos y respeta el año anterior null', function () {
+  var y = AGG.regularizacion(M, null);
+  assert.strictEqual(y.cbr.actual, 25);
+  assert.strictEqual(y.cbr.anterior, 25);
+  assert.strictEqual(y.proceso.actual, 700);
+  assert.strictEqual(y.proceso.anterior, 700);
+  assert.strictEqual(y.positivas.actual, 42);
+  assert.strictEqual(y.positivas.anterior, 35);
+});
+
+prueba('regularización: si UNA SEREMI no trae año anterior, el total queda null (no a medias)', function () {
+  var y = AGG.regularizacion(M, null);
+  // región 1 no trae año anterior de negativas; aunque la región 0 sí, el
+  // total no puede ser una suma a medias que parezca una cifra real.
+  assert.strictEqual(y.negativas.actual, 14);
+  assert.strictEqual(y.negativas.anterior, null);
+  assert.strictEqual(y.negativas.variacion, null);
+});
+
+prueba('regularización: filtrado por SEREMI trae solo su propia fila, con su propio A+B+C', function () {
+  var y0 = AGG.regularizacion(M, 0);
+  assert.strictEqual(y0.resA.actual, 25);
+  assert.strictEqual(y0.resB.actual, 10);
+  assert.strictEqual(y0.resC.actual, 5);
+  assert.ok(Math.abs(y0.positivas.variacion - (30 - 25) / 25) < 1e-9);
+});
+
+prueba('convenios: con todas cuenta solo vigentes y suma su monto, no el de los vencidos', function () {
+  var x = AGG.convenios(M, { region: null, materias: null });
+  assert.strictEqual(x.ft.length, 3);
+  assert.strictEqual(x.kpi.vigentes, 2);           // Conv A y Conv C; Conv B no está vigente
+  assert.strictEqual(x.kpi.monto, 3000);           // 1000 + 2000, sin el 500 de Conv B
+  assert.strictEqual(x.kpi.tramite, 2);
+});
+
+prueba('convenios: filtrado por SEREMI trae solo sus propias filas en ambas hojas', function () {
+  var x = AGG.convenios(M, { region: '15', materias: null });
+  assert.strictEqual(x.ft.length, 2);              // Conv A y Conv B, ambas de Arica
+  assert.strictEqual(x.kpi.vigentes, 1);           // solo Conv A
+  assert.strictEqual(x.kpi.monto, 1000);
+  assert.strictEqual(x.kpi.tramite, 1);            // solo Trm A
+});
+
+prueba('convenios: filtrado por Materia recorta las dos hojas por igual', function () {
+  var x = AGG.convenios(M, { region: null, materias: ['Regularización'] });
+  assert.strictEqual(x.ft.length, 2);              // Conv A y Conv C (Conv B es Propiedad fiscal)
+  assert.strictEqual(x.kpi.vigentes, 2);
+  assert.strictEqual(x.kpi.monto, 3000);
+  assert.strictEqual(x.kpi.tramite, 1);            // Trm A (Regularización); Trm B es Mixto
+});
+
 prueba('cortes() separa un valor muy grande en vez de repartir por cuantiles', function () {
   var c = AGG.cortes([1, 2, 3, 4, 5, 100], 3);
   assert.strictEqual(c.length, 2);
@@ -264,13 +432,15 @@ if (!fs.existsSync(__dirname + '/datos.js')) {
     assert.strictEqual(new Set(cods).size, 16);
   });
 
-  prueba('datos.js: están los seis bloques y cada uno declara su origen', function () {
-    ['cdc', 'oficios', 'catastro', 'gestion', 'dcpr', 'terreno'].forEach(function (k) {
+  prueba('datos.js: están los siete bloques y cada uno declara su origen', function () {
+    ['cdc', 'oficios', 'catastro', 'gestion', 'dcpr', 'terreno', 'convenios'].forEach(function (k) {
       assert.ok(D[k], 'falta el bloque ' + k);
       assert.ok(D[k].origen, k + ' sin origen: el panel no sabría si marcarlo como ejemplo');
     });
     assert.strictEqual(D.cdc.origen, 'diplap');
     assert.strictEqual(D.dcpr.origen, 'dcpr');
+    assert.strictEqual(D.gestion.origen, 'panel-autoridades');
+    assert.strictEqual(D.convenios.origen, 'excel-local');
     assert.ok(D.generado && D.corte && D.hoy);
   });
 
@@ -279,6 +449,12 @@ if (!fs.existsSync(__dirname + '/datos.js')) {
     var d = AGG.dcpr(D, null);
     assert.ok(d.titulos.delta !== null && d.tramitadas.delta !== null,
               'el último informe DCPR no tiene uno anterior con qué comparar');
+  });
+
+  prueba('datos.js: cada indicador del CDC trae su Meta anual', function () {
+    D.cdc.filas.forEach(function (f) {
+      assert.ok(f.metaAnual !== undefined, 'falta metaAnual en indicador ' + D.cdc.indicadores[f.i]);
+    });
   });
 
   prueba('datos.js: el semáforo se calcula para las 16 sin reventar', function () {
@@ -310,11 +486,24 @@ if (!fs.existsSync(__dirname + '/datos.js')) {
 
   prueba('datos.js: el cubo de gestión no apunta fuera de rango', function () {
     var c = D.gestion.cubo;
-    assert.strictEqual(c.length % 4, 0);
-    for (var i = 0; i < c.length; i += 4) {
-      assert.ok(c[i] < D.gestion.meses.length && c[i + 1] < 16
-                && c[i + 2] < D.gestion.tramites.length && c[i + 3] > 0);
+    assert.strictEqual(c.length % 6, 0);
+    for (var i = 0; i < c.length; i += 6) {
+      assert.ok(c[i] < D.gestion.meses.length && c[i + 1] < 16 && c[i + 2] < D.gestion.tramites.length
+                && c[i + 3] >= 0 && c[i + 4] >= 0 && c[i + 5] >= 0);
     }
+    assert.strictEqual(D.gestion.tramites.length, 6);
+    assert.deepStrictEqual(D.gestion.tramites.map(function (t) { return t.nombre; }),
+      ['Concesión OLP', 'Servidumbres', 'Arriendo', 'Aprovechamiento de Aguas', 'Venta', 'Ventas por Propuesta Pública']);
+  });
+
+  prueba('datos.js: gestión de Bienes calcula sin reventar y compara con el año anterior', function () {
+    var todos = D.gestion.tramites.map(function (t) { return t.nombre; });
+    var x = AGG.bienes(D, { region: null, tramites: todos });
+    assert.strictEqual(x.anioActual, D.gestion.mes_parcial.slice(0, 4));
+    assert.ok(x.kpi.ing.actual >= 0 && x.kpi.fin.actual >= 0);
+    assert.ok(x.kpi.ing.anterior > 0, 'sin año anterior con qué comparar: revisar el historial de la fuente');
+    assert.strictEqual(x.porTramite.length, 6);
+    assert.strictEqual(x.porRegion.length, 16);
   });
 
   prueba('datos.js: presupuesto CDC trae las 16 SEREMIs y cuadra con el total', function () {
@@ -326,13 +515,39 @@ if (!fs.existsSync(__dirname + '/datos.js')) {
     assert.ok(x.enMeta >= 0 && x.enMeta <= 16);
   });
 
-  prueba('datos.js: el mes de corte es el último y va marcado como parcial', function () {
-    assert.strictEqual(D.gestion.meses[D.gestion.meses.length - 1], D.corte);
-    // El parcial no puede entrar en la comparación mes a mes: si entrara,
-    // todas las SEREMIs aparecerían cayendo.
-    var g = AGG.gestion(D, 0, 4);
-    assert.ok(g.length > 0);
-    assert.ok(g[0].parcial >= 0);
+  prueba('datos.js: el mes_parcial de gestión es el último mes de su propia serie', function () {
+    assert.strictEqual(D.gestion.meses[D.gestion.meses.length - 1], D.gestion.mes_parcial);
+  });
+
+  prueba('datos.js: Gestión Regularización (Flujos) trae las 16 SEREMIs y A+B+C cuadra con positivas+negativas', function () {
+    assert.strictEqual(D.regularizacion.origen, 'dcpr-flujos');
+    assert.strictEqual(D.regularizacion.filas.length, 16);
+    D.regularizacion.filas.forEach(function (f) {
+      assert.strictEqual(f.resA.actual + f.resB.actual + f.resC.actual,
+        f.positivas.actual + f.negativas.actual, 'SEREMI ' + f.r);
+    });
+    var y = AGG.regularizacion(D, null);
+    assert.ok(y.cbr.actual > 0 && y.proceso.actual > 0);
+  });
+
+  prueba('datos.js: ingresos (panel A · Nuevos ingresos) trae las 16 SEREMIs y cuadra con el total', function () {
+    assert.strictEqual(D.dcpr.ingresos.porRegion.length, 16);
+    var suma = D.dcpr.ingresos.porRegion.reduce(function (a, v) { return a + v; }, 0);
+    assert.strictEqual(suma, D.dcpr.ingresos.total);
+    assert.ok(D.dcpr.ingresos.total > 0);
+  });
+
+  prueba('datos.js: Gestión de Convenios trae las 4 materias y filas con índices válidos', function () {
+    assert.deepStrictEqual(D.convenios.materias, ['Propiedad fiscal', 'Regularización', 'Mixto', 'Otro']);
+    assert.ok(D.convenios.ft.length > 0 && D.convenios.tramite.length > 0);
+    D.convenios.ft.concat(D.convenios.tramite).forEach(function (f) {
+      assert.ok(f.r >= 0 && f.r < 16, 'fila con región fuera de rango: ' + f.nombre);
+      assert.ok(f.materia >= 0 && f.materia < 4, 'fila con materia fuera de rango: ' + f.nombre);
+      assert.ok(f.monto === null || f.monto >= 0, 'monto negativo: ' + f.nombre);
+    });
+    var x = AGG.convenios(D, { region: null, materias: D.convenios.materias });
+    assert.strictEqual(x.kpi.vigentes, D.convenios.ft.filter(function (f) { return f.vigente; }).length);
+    assert.strictEqual(x.kpi.tramite, D.convenios.tramite.length);
   });
 }
 

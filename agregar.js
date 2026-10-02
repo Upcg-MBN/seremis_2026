@@ -23,9 +23,11 @@
     // Trimestral (catastro): la serie es suave, una caída chica ya es señal.
     caida: -0.02,
     caidaFuerte: -0.10,
-    // Mensual (gestión): los conteos de trámites oscilan varios puntos por mes
-    // sin que pase nada. Con el umbral trimestral, casi toda SEREMI aparecía
-    // en alerta por ruido. Estos dos hay que recalibrarlos con datos reales.
+    // Gestión de Bienes: finalizados del año a la fecha contra el mismo tramo
+    // del año anterior (no mes contra mes: con datos reales el conteo mensual
+    // por trámite es demasiado ruidoso, casi toda SEREMI salía en alerta).
+    // Ahora sí son datos reales (Panel-Autoridades); provisional igual,
+    // porque el umbral en sí no lo fija el documento y hay que acordarlo.
     caidaMes: -0.10,
     caidaMesFuerte: -0.25,
     // §2.5: reporte quincenal.
@@ -75,7 +77,7 @@
     var indicadores = D.cdc.filas.filter(function (f) { return todas || f.r === r; })
       .map(function (f) {
         return { r: f.r, indicador: D.cdc.indicadores[f.i], pond: f.pond, meta: f.meta,
-                 avance: f.avance, cumpl: f.cumpl, num: f.num, den: f.den, causa: f.causa };
+                 metaAnual: f.metaAnual, avance: f.avance, cumpl: f.cumpl, num: f.num, den: f.den, causa: f.causa };
       });
     return {
       global: serie[serie.length - 1], serie: serie, indicadores: indicadores,
@@ -161,45 +163,129 @@
   }
 
   // ------------------------------------------------------ §2.4a gestión Bienes
-  // «Especificar qué trámites más gestiona cada región, los 4 más gestionados
-  // por cada una y ver cómo avanzan respecto a ellos mismos el mes anterior».
-  // El mes de corte es parcial, así que la comparación válida es entre los dos
-  // últimos meses COMPLETOS; el parcial se informa aparte.
-  function gestion(D, r, cuantos) {
-    var ms = D.gestion.meses, cubo = D.gestion.cubo;
-    var iParcial = ms.length - 1, iActual = ms.length - 2, iPrevio = ms.length - 3;
-    var acum = {}, act = {}, prev = {}, parc = {};
-    for (var i = 0; i < cubo.length; i += 4) {
-      var m = cubo[i], reg = cubo[i + 1], t = cubo[i + 2], n = cubo[i + 3];
-      if (reg !== r) continue;
-      acum[t] = (acum[t] || 0) + n;
-      if (m === iActual) act[t] = (act[t] || 0) + n;
-      else if (m === iPrevio) prev[t] = (prev[t] || 0) + n;
-      else if (m === iParcial) parc[t] = (parc[t] || 0) + n;
+  // Cubo real de Panel-Autoridades: [mes, región, trámite, ingresados,
+  // finalizados, bajas], con la semántica de su propio agregar.js:
+  //   Ingresados y Finalizados son FLUJO del periodo: se suman.
+  //   Stock (mochila) es SALDO: ingresados menos bajas acumulado desde el
+  //   inicio de la serie (1998), nunca solo del año en curso — si se
+  //   recortara al año, el stock no cuadraría con nada.
+  // El año «actual» es siempre el de D.gestion.mes_parcial, así que esto no
+  // hay que tocarlo cuando extraer.py traiga un mes nuevo. f = { region:
+  // '13'|null, tramites: [nombre,...]|null }: tramites admite varios, null
+  // o vacío = todos. porRegion respeta solo el filtro de trámites (para que
+  // el gráfico muestre las 16 con la elegida resaltada, como el resto del
+  // panel); porTramite respeta solo el de región.
+  function bienes(D, f) {
+    var g = D.gestion, ms = g.meses, cubo = g.cubo;
+    var nM = ms.length, nR = D.regiones.length, nT = g.tramites.length;
+    var anioActual = g.mes_parcial.slice(0, 4), mesNum = g.mes_parcial.slice(5, 7);
+    var anioAnterior = String(+anioActual - 1);
+    var hastaActual = ms.indexOf(g.mes_parcial), desdeActual = ms.indexOf(anioActual + '-01');
+    var hastaAnterior = ms.indexOf(anioAnterior + '-' + mesNum), desdeAnterior = ms.indexOf(anioAnterior + '-01');
+
+    // Rezago: casos que ya estaban en trámite al 31-12-2025 y que al corte
+    // siguen sin resolver. El cubo no trae el caso a caso, así que no hay
+    // cómo saber si una baja de 2026 cerró un caso viejo o uno nuevo del
+    // mismo año: se asume que las bajas cierran primero lo más antiguo
+    // (FIFO), que es la lectura habitual de un «rezago» sin seguimiento por
+    // expediente. Es una cota: el stock de diciembre de 2025 menos todas las
+    // bajas desde enero de 2026, nunca bajo cero. 2025-12 es una fecha fija
+    // (no «el año anterior»): es el corte con que arrancó el seguimiento 2026.
+    var idxBase = ms.indexOf('2025-12');
+    var bajasPost = 0;
+
+    var fr = f.region == null ? -1 : D.regiones.map(function (x) { return x.codigo; }).indexOf(f.region);
+    var ft = null;
+    if (f.tramites && f.tramites.length) {
+      ft = {};
+      f.tramites.forEach(function (nombre) {
+        var j = g.tramites.map(function (x) { return x.nombre; }).indexOf(nombre);
+        if (j >= 0) ft[j] = true;
+      });
     }
-    var filas = Object.keys(acum).map(function (t) {
-      var actual = act[t] || 0, anterior = prev[t] || 0;
-      return {
-        tramite: D.gestion.tramites[t].nombre,
-        total: acum[t], actual: actual, anterior: anterior,
-        parcial: parc[t] || 0,
-        variacion: variacion(actual, anterior)
-      };
-    });
-    // Desempate por nombre: sin esto el orden depende del de las claves y dos
-    // trámites empatados cambian de puesto entre recargas.
-    filas.sort(function (a, b) {
-      return b.total - a.total || a.tramite.localeCompare(b.tramite, 'es');
-    });
-    return cuantos ? filas.slice(0, cuantos) : filas;
+
+    var netoTotal = new Float64Array(nM), netoPorTramite = [], netoPorRegion = [];
+    for (var t = 0; t < nT; t++) netoPorTramite.push(new Float64Array(nM));
+    for (var r = 0; r < nR; r++) netoPorRegion.push(new Float64Array(nM));
+    var ingA = 0, finA = 0, ingP = 0, finP = 0;
+    var tIngA = new Float64Array(nT), tFinA = new Float64Array(nT);
+    var tIngP = new Float64Array(nT), tFinP = new Float64Array(nT);
+    var rIngA = new Float64Array(nR), rFinA = new Float64Array(nR);
+    var rIngP = new Float64Array(nR), rFinP = new Float64Array(nR);
+    var tBajasPost = new Float64Array(nT);   // bajas posteriores a idxBase, por trámite (respeta solo región)
+
+    for (var i = 0; i < cubo.length; i += 6) {
+      var m = cubo[i], reg = cubo[i + 1], tr = cubo[i + 2];
+      var ing = cubo[i + 3], fin = cubo[i + 4], baja = cubo[i + 5], n = ing - baja;
+      var okT = !ft || ft[tr] === true, okR = fr === -1 || reg === fr;
+      if (okT) netoPorRegion[reg][m] += n;
+      if (okR) netoPorTramite[tr][m] += n;
+      if (okT && okR) netoTotal[m] += n;
+
+      var enActual = m >= desdeActual && m <= hastaActual;
+      var enAnterior = hastaAnterior >= 0 && m >= desdeAnterior && m <= hastaAnterior;
+      if (okT && okR && enActual) { ingA += ing; finA += fin; }
+      if (okT && okR && enAnterior) { ingP += ing; finP += fin; }
+      if (okR && enActual) { tIngA[tr] += ing; tFinA[tr] += fin; }
+      if (okR && enAnterior) { tIngP[tr] += ing; tFinP[tr] += fin; }
+      if (okT && enActual) { rIngA[reg] += ing; rFinA[reg] += fin; }
+      if (okT && enAnterior) { rIngP[reg] += ing; rFinP[reg] += fin; }
+      if (idxBase >= 0 && m > idxBase && m <= hastaActual) {
+        if (okT && okR) bajasPost += baja;
+        if (okR) tBajasPost[tr] += baja;
+      }
+    }
+
+    function acumHasta(serie, hasta) {
+      var s = 0;
+      for (var k = 0; k <= hasta; k++) s += serie[k];
+      return s;
+    }
+    function medida(actual, anterior) {
+      return { actual: actual, anterior: anterior, variacion: variacion(actual, anterior) };
+    }
+
+    var stockBase = idxBase >= 0 ? acumHasta(netoTotal, idxBase) : null;
+    var rezago = stockBase === null ? null : Math.max(0, stockBase - bajasPost);
+
+    return {
+      anioActual: anioActual, anioAnterior: anioAnterior,
+      corte: g.mes_parcial, corteAnterior: hastaAnterior >= 0 ? ms[hastaAnterior] : null,
+      kpi: {
+        ing: medida(ingA, ingP), fin: medida(finA, finP),
+        moc: medida(acumHasta(netoTotal, hastaActual), hastaAnterior >= 0 ? acumHasta(netoTotal, hastaAnterior) : null),
+        rezago: { actual: rezago, base: stockBase }
+      },
+      porTramite: g.tramites.map(function (x, j) {
+        var baseT = idxBase >= 0 ? acumHasta(netoPorTramite[j], idxBase) : null;
+        return {
+          nombre: x.nombre, ing: medida(tIngA[j], tIngP[j]), fin: medida(tFinA[j], tFinP[j]),
+          moc: medida(acumHasta(netoPorTramite[j], hastaActual),
+                      hastaAnterior >= 0 ? acumHasta(netoPorTramite[j], hastaAnterior) : null),
+          rezago: { actual: baseT === null ? null : Math.max(0, baseT - tBajasPost[j]), base: baseT }
+        };
+      }).filter(function (x, j) { return !ft || ft[j]; }),
+      porRegion: D.regiones.map(function (x, j) {
+        return {
+          codigo: x.codigo, nombre: x.nombre, ing: medida(rIngA[j], rIngP[j]), fin: medida(rFinA[j], rFinP[j]),
+          moc: medida(acumHasta(netoPorRegion[j], hastaActual),
+                      hastaAnterior >= 0 ? acumHasta(netoPorRegion[j], hastaAnterior) : null)
+        };
+      })
+    };
   }
 
-  function estadoGestion(filas) {
-    return filas.reduce(function (e, f) {
-      if (f.variacion === null) return e;
-      return peor(e, f.variacion < REGLAS.caidaMesFuerte ? 'critico'
-                   : f.variacion < REGLAS.caidaMes ? 'alerta' : 'bueno');
-    }, 'bueno');
+  // Estado de la SEREMI: finalizados del año a la fecha contra el mismo tramo
+  // del año anterior, con todos los trámites de D.gestion.tramites siempre
+  // completos (el filtro de trámites de la página es solo para mirar, no
+  // cambia el semáforo). Se usa
+  // finalizados y no el stock porque un stock que sube es ambiguo (puede ser
+  // más ingreso, que es bueno) mientras que menos finalizados que el año
+  // pasado es una señal más directa de que se está gestionando menos.
+  function estadoGestion(x) {
+    var v = x.kpi.fin.variacion;
+    if (v === null) return 'bueno';
+    return v < REGLAS.caidaMesFuerte ? 'critico' : v < REGLAS.caidaMes ? 'alerta' : 'bueno';
   }
 
   // ---------------------------------------------------------- presupuesto CDC
@@ -216,6 +302,40 @@
     return {
       budget: budget, dev: dev, pct: budget ? dev / budget : null,
       enMeta: enMeta, total: filas.length, filas: filas
+    };
+  }
+
+  // --------------------------------------------------------- gestión de Convenios
+  // Aparte de las cinco dimensiones del documento, igual que Presupuesto: no
+  // hay serie mensual, es una foto del estado de los convenios a la fecha de
+  // la planilla. Dos filtros propios de la página, región (f.region, mismo
+  // código que usa el resto del panel) y materia (f.materias, lista de
+  // nombres, mismo patrón que f.tramites en Gestión de Bienes): ambos se
+  // aplican a las dos hojas por igual. «Convenios vigentes» y su monto salen
+  // solo de «Convenios FT» con Estado = Vigente; «Convenios en trámite» es el
+  // total de filas de la hoja «En trámite» tras el filtro.
+  function convenios(D, f) {
+    var c = D.convenios;
+    var fr = f.region == null ? -1 : D.regiones.map(function (x) { return x.codigo; }).indexOf(f.region);
+    var fm = null;
+    if (f.materias && f.materias.length) {
+      fm = {};
+      f.materias.forEach(function (nombre) {
+        var j = c.materias.indexOf(nombre);
+        if (j >= 0) fm[j] = true;
+      });
+    }
+    function pasa(fila) {
+      return (fr === -1 || fila.r === fr) && (!fm || fm[fila.materia] === true);
+    }
+    var ft = c.ft.filter(pasa);
+    var tramite = c.tramite.filter(pasa);
+    var ftVigentes = ft.filter(function (x) { return x.vigente; });
+    var montoVigentes = ftVigentes.reduce(function (a, x) { return a + (x.monto || 0); }, 0);
+    return {
+      corte: c.corte, materias: c.materias,
+      kpi: { vigentes: ftVigentes.length, monto: montoVigentes, tramite: tramite.length },
+      ft: ft, ftVigentes: ftVigentes, tramite: tramite
     };
   }
 
@@ -261,6 +381,34 @@
   function estadoDcpr(x) {
     var n = (x.sinAvanceTramitadas ? 1 : 0) + (x.sinAvanceTitulos ? 1 : 0);
     return n === 2 ? 'critico' : n ? 'alerta' : 'bueno';
+  }
+
+  // --------------------------------------- Gestión Regularización («Flujos»)
+  // extraer.py ya entrega cada campo acumulado por región, año a la fecha
+  // contra el mismo tramo del año anterior — salvo «proceso», que es una foto
+  // al corte (casos abiertos), no algo que tenga sentido sumar mes a mes dos
+  // veces. Con r null suma las 16 SEREMIs; si alguna fila no tiene anterior
+  // (fuente sin ese mes el año pasado), la variación del total queda null en
+  // vez de una cifra a medias.
+  function regularizacion(D, r) {
+    var filas = D.regularizacion.filas;
+    var todas = r === null || r === undefined;
+    function medida(campo) {
+      var actual = 0, anterior = 0, hayAnterior = true;
+      filas.forEach(function (f) {
+        if (!todas && f.r !== r) return;
+        actual += f[campo].actual;
+        if (f[campo].anterior === null) hayAnterior = false;
+        else anterior += f[campo].anterior;
+      });
+      return { actual: actual, anterior: hayAnterior ? anterior : null,
+               variacion: hayAnterior ? variacion(actual, anterior) : null };
+    }
+    return {
+      cbr: medida('cbr'), proceso: medida('proceso'),
+      positivas: medida('positivas'), negativas: medida('negativas'),
+      resA: medida('resA'), resB: medida('resB'), resC: medida('resC')
+    };
   }
 
   // -------------------------------------------------- §2.5 gobierno en terreno
@@ -311,7 +459,7 @@
   function semaforo(D) {
     return D.regiones.map(function (reg, r) {
       var fc = cdc(D, r), fo = oficios(D, r), fk = catastro(D, r);
-      var fg = gestion(D, r, 4), fd = dcpr(D, r), ft = terreno(D, r);
+      var fg = bienes(D, { region: reg.codigo, tramites: null }), fd = dcpr(D, r), ft = terreno(D, r);
       var celdas = {
         cdc: estadoCdc(fc), oficios: estadoOficios(fo),
         catastro: estadoCatastro(fk), gestion: estadoGestion(fg),
@@ -359,18 +507,15 @@
                           REGLAS.oficioViejo + ' días o más; el más antiguo lleva ' +
                           cl(f.detalle.oficios.esperaMaxima, 0) + ' días' });
       }
-      f.detalle.catastro.forEach(function (c) {
-        if (c.compara && c.variacion !== null && c.variacion < REGLAS.caida) {
-          out.push({ r: f.r, seremi: f.nombre, estado: f.celdas.catastro, dimension: 'Catastro',
-                     texto: c.indicador + ' cayó ' + cl(Math.abs(c.variacion) * 100, 1) +
-                            ' % respecto al trimestre anterior' });
-        }
-      });
-      f.detalle.gestion.forEach(function (g) {
-        if (g.variacion !== null && g.variacion < REGLAS.caidaMes) {
+      // Catastro no genera alertas: sigue con datos de ejemplo y sin umbral
+      // acordado con Gabinete (ver Resumen, tabla «Estado por SEREMI y
+      // dimensión», donde va marcado «informativo»). `celdas.catastro` se
+      // sigue calculando (lo usa `peor`), solo no alimenta esta lista.
+      f.detalle.gestion.porTramite.forEach(function (g) {
+        if (g.fin.variacion !== null && g.fin.variacion < REGLAS.caidaMes) {
           out.push({ r: f.r, seremi: f.nombre, estado: f.celdas.gestion, dimension: 'Bienes',
-                     texto: g.tramite + ' bajó ' + cl(Math.abs(g.variacion) * 100, 1) +
-                            ' % respecto al mes anterior' });
+                     texto: g.nombre + ': finalizados bajaron ' + cl(Math.abs(g.fin.variacion) * 100, 1) +
+                            ' % respecto al mismo periodo de ' + f.detalle.gestion.anioAnterior });
         }
       });
       if (f.detalle.terreno.sinReportar) {
@@ -431,8 +576,8 @@
   var api = {
     REGLAS: REGLAS, dia: dia, mediana: mediana, variacion: variacion,
     cdc: cdc, estadoCumpl: estadoCumpl, oficios: oficios, catastro: catastro,
-    participacion: participacion, gestion: gestion, dcpr: dcpr, terreno: terreno,
-    presupuesto: presupuesto,
+    participacion: participacion, bienes: bienes, dcpr: dcpr, terreno: terreno,
+    presupuesto: presupuesto, regularizacion: regularizacion, convenios: convenios,
     semaforo: semaforo, alertas: alertas, cortes: cortes
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

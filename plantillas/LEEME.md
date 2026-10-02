@@ -1,11 +1,34 @@
 # Plantillas de captura
 
-Las tres fuentes que el sistema necesita y que hoy no existen. (El CDC y la
-gestión DCPR ya no necesitan planilla: se leen de los paneles que publican
-DIPLAP y el DCPR.) Cada archivo es
-un CSV con encabezado: se abre y se edita en Excel como cualquier planilla, pero
-`extraer.py` lo lee con el módulo `csv` de la biblioteca estándar, sin
+Las tres fuentes que el sistema necesita y que hoy no existen (oficios,
+catastro y gobierno en terreno). (El CDC y la gestión DCPR ya no necesitan
+planilla: se leen de los paneles que publican DIPLAP y el DCPR.) Cada archivo
+es un CSV con encabezado: se abre y se edita en Excel como cualquier planilla,
+pero `extraer.py` lo lee con el módulo `csv` de la biblioteca estándar, sin
 dependencias ni macros.
+
+**`Base_Convenios.xlsx` es distinto**, y ya está en uso real (Gestión de
+Convenios, 01-10-2026): no es una plantilla propuesta por este proyecto, sino
+la planilla que ya lleva UPCG para sus convenios, con dos hojas que
+`extraer.py` lee con `openpyxl` (`convenios()`):
+
+- **«Convenios FT»**: convenios formalizados, vigentes y no vigentes. Columnas
+  que usa el panel: `Región/División`, `Materia` (Propiedad fiscal /
+  Regularización / Mixto / Otro, cerrado), `Nombre Convenio`, `Inicio`, `Fin`,
+  `Tipo Otorgante`, `Entidad Otorgante`, `Monto  Convenio ` (así, con espacios
+  de más — `extraer.py` los colapsa al comparar encabezados), `Estado`
+  (`Vigente` / `No vigente`) y `Fecha corte`.
+- **«En trámite»**: convenios en negociación o firma. Columnas que usa el
+  panel: `RESPONSABLE MBN` (de ahí sale la SEREMI, buscando su nombre dentro
+  del texto: «Seremi Los Lagos», «DCPR - Seremi O'Higgins»), `MATERIA
+  (referencial)` (texto libre, se homologa por palabra clave a las mismas 4
+  categorías de «Convenios FT»), `NOMBRE CONVENIO`, `MONTO` y `ORGANISMO
+  EXTERNO`.
+
+En ambas hojas, una fila sin SEREMI reconocible (una división nacional como
+DIPLAP/GABSUB/DBN/DCPR/DICAT, o una nota suelta) **se omite sin avisar**: es
+la regla pedida, no un error de captura. Detalle completo en `CLAUDE.md` §2
+(«Aparte, `convenios`…») y en el glosario del panel.
 
 El criterio del documento manda sobre todo lo demás: **«es preferible registrar
 menos con certeza que registrar todo con brechas»**. De ahí salen las cuatro
@@ -108,5 +131,6 @@ Una quincena sin fila es una quincena sin reporte, y el panel la marca.
 Estos CSV son el formato mínimo que funciona hoy. Convertirlos a **`.xlsx` con
 encabezados bloqueados y listas desplegables** en `seremi`, `actores` y
 `trimestre` reduciría los errores de captura en origen, que es donde importan.
-Requiere `pip install openpyxl` en el Python del equipo (hoy solo tiene
-`psycopg2`).
+`openpyxl` ya está instalado en el Python del equipo (lo trajo Gestión de
+Convenios, que lee `Base_Convenios.xlsx` así), así que lo único que falta es
+decidir si vale la pena para estas tres.
