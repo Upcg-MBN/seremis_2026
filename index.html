@@ -78,7 +78,10 @@ button{font:inherit; color:inherit}
 .menu-pie button:hover{color:var(--primario-darken-1)}
 
 /* ---------- Contenido y filtros ---------- */
-.contenido{flex:1; min-width:0; padding:2rem; display:flex; flex-direction:column; gap:1.5rem}
+/* Densidad de dashboard (15-10-2026): a 100 % en un monitor 1080p cada página
+   tiene que leerse casi sin desplazarse. 1 rem entre bloques, 1,25 rem dentro
+   de la tarjeta, 0,75 rem entre las piezas de una tarjeta. */
+.contenido{flex:1; min-width:0; padding:1.5rem; display:flex; flex-direction:column; gap:1rem}
 .filtros{display:flex; align-items:center; gap:1rem; flex-wrap:wrap}
 /* <select> nativo dentro del chip: en móvil abre el selector del sistema y
    funciona con teclado y lector de pantalla sin escribir una línea. */
@@ -112,13 +115,18 @@ button{font:inherit; color:inherit}
 .filtros-hoja{display:contents}
 .btn-filtros,.hoja-cab,.hoja-listo{display:none}
 
-.pagina{display:flex; flex-direction:column; gap:1.5rem; flex:1; min-height:0}
+.pagina{display:flex; flex-direction:column; gap:1rem; flex:1; min-height:0}
 .pagina[hidden]{display:none}
-.tarjeta{background:var(--blanco-base); border-radius:var(--radius-m); box-shadow:var(--elevation-01); padding:1.5rem; min-width:0}
-.col{display:flex; flex-direction:column; gap:1rem}
-.fila{display:flex; gap:1.5rem; flex:1; min-height:0}
+.tarjeta{background:var(--blanco-base); border-radius:var(--radius-m); box-shadow:var(--elevation-01); padding:1.25rem; min-width:0}
+.col{display:flex; flex-direction:column; gap:0.75rem}
+.fila{display:flex; gap:1rem; flex:1; min-height:0}
 .fila > .ancho{flex:2 1 0}
 .fila > .angosto{flex:1 1 0}
+/* Donut con su tabla de cinco columnas: 2/5 del ancho, para que los nombres
+   de subtítulo no se partan en tres líneas. */
+.fila--2-3 > .angosto{flex:2 1 0}
+.fila--2-3 > .ancho{flex:3 1 0}
+.fila--mitades > .tarjeta{flex:1 1 0}
 /* Las 16 SEREMIs a la vista, sin caja con scroll: la fila toma su alto natural. */
 .fila--toda{flex:none}
 /* Solo en escritorio: bajo 1200 px la fila se apila y la matriz conserva su
@@ -127,15 +135,26 @@ button{font:inherit; color:inherit}
   .fila--toda .barras,.fila--toda .matriz-caja{overflow:visible}
   /* Resumen: la matriz manda la altura y las alertas hacen scroll dentro de ella. */
   .fila--toda .alertas{contain:size; flex:1 1 0}
+  /* Mismo gesto para una tabla junto a un gráfico: el gráfico manda la altura
+     de la fila y la tabla se desplaza dentro de su tarjeta. */
+  .fila--toda .ajusta{contain:size; flex:1 1 0}
+  /* Fila de alto fijo (la pantalla menos cabecera, filtros y cifras): sus
+     tablas se desplazan dentro, con el encabezado fijo. */
+  .fila--alta{flex:none; height:max(24rem, calc(100vh - 22rem))}
+}
+/* Tabla larga sola en su tarjeta: como máximo el alto útil de la pantalla. */
+@media (min-width:1024px) and (min-height:600px){
+  .datos--alto{flex:none; max-height:max(20rem, calc(100vh - 20rem))}
 }
 .nota{margin:0; font-size:0.875rem; color:var(--gris-60)}
 
 /* ---------- KPI ---------- */
-.kpis{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem}
+.kpis{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem}
 .kpis--5{grid-template-columns:repeat(5,minmax(0,1fr))}
 .kpis--6{grid-template-columns:repeat(6,minmax(0,1fr))}
-.kpi{display:flex; flex-direction:column; gap:0.625rem}
-.kpi-rot{display:flex; align-items:center; gap:0.75rem; font-size:0.9375rem; color:var(--gris-60)}
+.kpi{display:flex; flex-direction:column; gap:0.375rem}
+.tarjeta.kpi{padding:0.875rem 1.125rem}
+.kpi-rot{display:flex; align-items:center; gap:0.625rem; font-size:0.875rem; line-height:1.3; color:var(--gris-60)}
 .kpi-rot .ico{color:var(--primario-darken-1)}
 /* Cuando el valor lleva color de estado, el ícono lo acompaña: el estado nunca
    va en color solo (ESTANDAR-VISUALIZACION.md §3). */
@@ -143,14 +162,14 @@ button{font:inherit; color:inherit}
 .kpi-rot--rojo .ico{color:var(--error-darken-3)}
 .kpi-rot--ambar .ico{color:var(--chart-estado-alerta)}
 /* Roboto Slab en la cifra, como pide el Manual de Normas Gráficas. */
-.kpi-num{font-family:var(--font-slab); font-size:2.75rem; font-weight:700; line-height:1}
+.kpi-num{font-family:var(--font-slab); font-size:2.25rem; font-weight:700; line-height:1.05}
 .kpi-num--verde{color:var(--exito-darken-3)}
 .kpi-num--rojo{color:var(--error-darken-3)}
 .kpi-num--ambar{color:var(--chart-estado-alerta)}
 /* Cifras en pesos (p. ej. "M$ 4.198.585.413"): a 2.75rem no caben en el ancho
    de la tarjeta. Mismo tipo y peso, tamaño menor. */
-.kpi-num--money{font-size:1.75rem}
-.kpi-pie{display:flex; align-items:center; gap:0.375rem; font-size:0.875rem; color:var(--gris-60)}
+.kpi-num--money{font-size:1.625rem}
+.kpi-pie{display:flex; align-items:center; gap:0.375rem; font-size:0.8125rem; line-height:1.35; color:var(--gris-60)}
 /* Para una oración completa (p. ej. el % ya cerrado del rezago) en vez de la
    fila corta «etiqueta: valor»: se necesita que el texto haga salto de línea
    normal, no que se apriete en una sola fila flex. */
@@ -158,8 +177,10 @@ button{font:inherit; color:inherit}
 
 /* ---------- Tarjetas ---------- */
 .t-cab{display:flex; align-items:center; gap:0.5rem 1.25rem; flex-wrap:wrap}
-.t-cab h2{margin:0; font-size:1.1875rem; font-weight:500; line-height:1.3}
-.t-sub{margin:-0.75rem 0 0; max-width:90ch; font-size:0.875rem; color:var(--gris-60)}
+.t-cab h2{margin:0; font-size:1.0625rem; font-weight:500; line-height:1.3}
+/* A todo el ancho de la tarjeta: con 90ch el texto de Presupuesto ocupaba
+   cuatro líneas en la mitad izquierda y dejaba la derecha vacía. */
+.t-sub{margin:-0.375rem 0 0; font-size:0.8125rem; line-height:1.4; color:var(--gris-60)}
 .leyenda{display:flex; flex-wrap:wrap; gap:0.375rem 1rem; font-size:0.875rem; color:var(--gris-60)}
 .leyenda span{display:flex; align-items:center; gap:0.5rem}
 .k-caja{width:0.75rem; height:0.75rem; border-radius:2px}
@@ -170,14 +191,19 @@ button{font:inherit; color:inherit}
    Una sola serie: un solo azul. El color no codifica la magnitud, el largo ya
    lo hace. La marca de meta es un tick oscuro sobre la pista. */
 .barras{display:flex; flex-direction:column; gap:2px; overflow:auto; flex:1; min-height:0; margin:0 -4px}
-.barra-fila{display:grid; grid-template-columns:minmax(0,15rem) minmax(0,1fr) 5.5rem; align-items:center; gap:0.75rem;
-  width:100%; padding:0.25rem; border:0; border-radius:var(--radius-s); background:none; font-size:0.875rem; text-align:left}
+/* Una línea por SEREMI: el valor y su detalle (estado, monto) van lado a lado,
+   no uno bajo el otro. Columnas fijas para que las barras de todas las filas
+   partan y terminen en el mismo lugar. */
+.barra-fila{display:grid; grid-template-columns:minmax(0,11rem) minmax(0,1fr) 10rem; align-items:center; gap:0.75rem;
+  width:100%; padding:0.1875rem 0.25rem; border:0; border-radius:var(--radius-s); background:none; font-size:0.8125rem; line-height:1.3; text-align:left}
 .barra-nom{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.pista{position:relative; height:0.875rem; background:var(--gris-5); border-radius:var(--radius-s)}
+.pista{position:relative; height:0.75rem; background:var(--gris-5); border-radius:var(--radius-s)}
 .relleno{display:block; height:100%; background:var(--primario-darken-1); border-radius:0 var(--radius-s) var(--radius-s) 0}
 .meta-tick{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--gris-70)}
-.barra-val{text-align:right; font-weight:500; font-variant-numeric:tabular-nums}
-.barra-val small{display:block; font-size:max(11px,0.75rem); font-weight:400; color:var(--gris-60)}
+.barra-val{display:flex; align-items:baseline; justify-content:flex-end; gap:0.5rem; white-space:nowrap;
+  font-weight:500; font-variant-numeric:tabular-nums}
+.barra-val small{font-size:max(11px,0.75rem); font-weight:400; color:var(--gris-60)}
+.barra-val small .sem{display:inline-flex}
 .datos small,.tabla small{font-size:max(11px,0.75rem)}
 .barra-val .sem{justify-content:flex-end}
 /* Barra que elige SEREMI: mismo gesto que el mapa. Las demás se atenúan. */
@@ -203,18 +229,20 @@ button.barra-fila:hover{background:var(--gris-5)}
    colores siguen al subtítulo en orden fijo (--chart-1…4), 2 px de fondo
    entre segmentos. La leyenda ES la tabla de datos: el 0,6 % de ST29 no se
    ve en el anillo y no se agranda (sería mentir el ángulo), se lee aquí. */
-.dn{display:flex; flex-wrap:wrap; align-items:center; gap:1rem 2rem; padding:0.25rem 0 1rem; border-bottom:1px solid var(--gris-10)}
-.dn-grafico{flex:none; width:11rem; height:11rem}
+/* En su propia tarjeta: el anillo arriba y la tabla debajo, a todo el ancho
+   (lado a lado, la tabla de cinco columnas quedaba cortada). */
+.dn{display:flex; flex-direction:column; align-items:center; gap:0.75rem}
+.dn-grafico{flex:none; width:10rem; height:10rem}
 .dn-grafico svg{display:block; width:100%; height:100%}
 .dn-seg{transition:opacity var(--duration-base) var(--ease-standard)}
 .dn.con-foco .dn-seg:not(.activo){opacity:.3}
 .dn-cen-num{font-family:var(--font-slab); font-weight:700; fill:var(--negro-text)}
 .dn-cen-rot{fill:var(--gris-60)}
-.dn-ley{flex:1 1 24rem; min-width:0; overflow-x:auto}
+.dn-ley{align-self:stretch; min-width:0; overflow-x:auto}
 .dn-tit{margin:0 0 0.5rem; font-size:1rem; font-weight:500}
 .dn-ley table{border-collapse:collapse; width:100%; font-size:max(12px,0.8125rem)}
 .dn-ley th{padding:0.25rem 0.5rem; border-bottom:1px solid var(--gris-20); font-weight:500; color:var(--gris-60); text-align:right; white-space:nowrap}
-.dn-ley td{padding:0.375rem 0.5rem; border-bottom:1px solid var(--gris-10); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.dn-ley td{padding:0.3125rem 0.5rem; border-bottom:1px solid var(--gris-10); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
 .dn-ley th:first-child,.dn-ley td:first-child{text-align:left; white-space:normal}
 .dn-ley tbody tr.activo td{background:var(--gris-5)}
 .dn-ley tfoot td{font-weight:500; border-bottom:0}
@@ -230,16 +258,16 @@ button.barra-fila:hover{background:var(--gris-5)}
 .pista--apilada{display:flex; gap:2px}
 .pista--apilada .relleno{border-radius:0}
 .pista--apilada .relleno:last-child{border-radius:0 var(--radius-s) var(--radius-s) 0}
-.barras--angosta .barra-fila{grid-template-columns:minmax(0,9rem) minmax(0,1fr) 6.5rem}
+.barras--angosta .barra-fila{grid-template-columns:minmax(0,9rem) minmax(0,1fr) 7rem}
 
 /* ---------- Semáforo ----------
    Nunca solo color: cada celda lleva ícono y etiqueta (estándar §3). */
 .matriz{border-collapse:collapse; width:100%; font-size:max(12px,0.8125rem)}
 .matriz thead th{position:sticky; top:0; z-index:1; background:var(--primario-darken-1); color:var(--blanco-base);
-  padding:0.5rem 0.75rem; font-weight:700; text-align:left; white-space:nowrap}
+  padding:0.375rem 0.625rem; font-weight:700; text-align:left; white-space:nowrap}
 .th-ej{display:block; font-size:max(11px,0.6875rem); font-weight:400; letter-spacing:.04em; opacity:.85}
-.matriz tbody th{text-align:left; font-weight:400; padding:0.25rem 0.75rem; border-bottom:1px solid var(--gris-10); white-space:nowrap}
-.matriz td{padding:0.25rem 0.75rem; border-bottom:1px solid var(--gris-10)}
+.matriz tbody th{text-align:left; font-weight:400; padding:0.1875rem 0.625rem; border-bottom:1px solid var(--gris-10); white-space:nowrap}
+.matriz td{padding:0.1875rem 0.625rem; border-bottom:1px solid var(--gris-10)}
 .matriz tbody tr:nth-child(even){background:var(--gris-5)}
 .matriz tbody tr:hover{background:var(--secundario-base)}
 /* Fila, columna y celda clicables: fila filtra por la SEREMI, columna va a esa
@@ -264,14 +292,13 @@ button.barra-fila:hover{background:var(--gris-5)}
 
 /* ---------- Alertas ---------- */
 .alertas{display:flex; flex-direction:column; gap:0.5rem; overflow:auto; flex:1; min-height:0}
-.alerta{display:grid; grid-template-columns:auto 1fr; gap:0.25rem 0.75rem; padding:0.625rem 0.75rem;
-  border:1px solid var(--gris-10); border-left:0.25rem solid var(--gris-30); border-radius:var(--radius-s)}
-.alerta--critico{border-left-color:var(--error-darken-3)}
-.alerta--alerta{border-left-color:var(--chart-estado-alerta)}
+/* El estado lo llevan el ícono y su color, no una franja lateral. */
+.alerta{display:grid; grid-template-columns:auto 1fr; gap:0.125rem 0.625rem; padding:0.5rem 0.75rem;
+  border:1px solid var(--gris-10); border-radius:var(--radius-s)}
 .alerta--critico .ico{color:var(--error-darken-3)}
 .alerta--alerta .ico{color:var(--chart-estado-alerta)}
 .alerta b{font-weight:500}
-.alerta p{grid-column:2; margin:0; font-size:0.875rem; color:var(--gris-70)}
+.alerta p{grid-column:2; margin:0; font-size:0.8125rem; line-height:1.35; color:var(--gris-70)}
 .alerta-dim{font-size:max(11px,0.75rem); font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--gris-60)}
 
 
@@ -296,9 +323,9 @@ button.barra-fila:hover{background:var(--gris-5)}
 .tabla-caja{max-height:17.5rem; overflow:auto; margin-top:0.5rem}
 .tabla table,.datos table{border-collapse:collapse; width:100%; font-size:max(12px,0.8125rem); background:var(--blanco-base)}
 .tabla thead th,.datos thead th{position:sticky; top:0; background:var(--primario-darken-1); color:var(--blanco-base);
-  text-align:right; padding:0.5rem 0.75rem; font-weight:700}
+  text-align:right; padding:0.4375rem 0.625rem; font-weight:700}
 .tabla thead th:first-child,.datos thead th:first-child{text-align:left}
-.tabla td,.tabla tbody th,.datos td,.datos tbody th{padding:0.375rem 0.75rem; border-bottom:1px solid var(--gris-10);
+.tabla td,.tabla tbody th,.datos td,.datos tbody th{padding:0.3125rem 0.625rem; border-bottom:1px solid var(--gris-10);
   text-align:right; font-variant-numeric:tabular-nums}
 .tabla tbody th,.datos tbody th{text-align:left; font-weight:400}
 /* Las columnas de texto se alinean a la izquierda; las de cifras, a la derecha
@@ -333,8 +360,8 @@ button.barra-fila:hover{background:var(--gris-5)}
   background:var(--gris-5); font-size:max(11px,0.75rem); color:var(--gris-70)}
 
 /* ---------- Aviso de datos de ejemplo ---------- */
-.demo{display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1rem; border-radius:var(--radius-s);
-  background:var(--chart-relleno-suave-2); border-left:0.25rem solid var(--chart-estado-alerta); font-size:0.9375rem}
+.demo{display:flex; align-items:center; gap:0.75rem; padding:0.5rem 1rem; border-radius:var(--radius-s);
+  background:var(--chart-relleno-suave-2); font-size:0.875rem}
 .demo .ico{color:var(--chart-estado-alerta)}
 .demo[hidden]{display:none}
 
@@ -479,7 +506,9 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   .kpi-num--money{font-size:1.1875rem}
   .kpi-pie{font-size:0.75rem; align-items:flex-start}
   .ind-num{font-size:1.375rem}
-  .barra-fila{grid-template-columns:minmax(0,8rem) minmax(0,1fr) 4.25rem; gap:0.5rem}
+  .barra-fila{grid-template-columns:minmax(0,8rem) minmax(0,1fr) 5.5rem; gap:0.5rem}
+  /* En celular no caben lado a lado: el detalle vuelve bajo el valor. */
+  .barra-val{flex-direction:column; align-items:flex-end; gap:0}
   .mapa-caja{height:26rem}
   .matriz{font-size:max(11px,0.75rem)}
   .matriz thead th,.matriz tbody th,.matriz td{padding:0.25rem 0.375rem}
@@ -488,6 +517,9 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   /* Oculta a la vista pero no al lector de pantalla. La .sem la contiene: si no,
      el span absoluto escapa del scroll de la tabla y estira la página. */
   .sem{position:relative}
+  /* Cifras y fechas en una línea: «13-06-2022» partida en tres no se lee.
+     Solo el texto (.izq) hace salto; la tabla se desplaza hacia el lado. */
+  .datos td:not(.izq),.datos th:not(.izq){white-space:nowrap}
   .sem-rot{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 }
 @media (pointer:coarse){
@@ -540,7 +572,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 .informe .mapa-caja{flex:none; height:150mm; min-height:0}
 .informe .escala{font-size:8.5pt}
 .informe .barras,.informe .alertas,.informe .minutas,.informe .matriz-caja,.informe .datos{flex:none; overflow:visible; max-height:none}
-.informe .barra-fila{grid-template-columns:70mm minmax(0,1fr) 22mm; padding:1mm 0; font-size:9pt}
+.informe .barra-fila{grid-template-columns:62mm minmax(0,1fr) 34mm; padding:1mm 0; font-size:9pt}
 .informe .tabla-caja{max-height:none; overflow:visible; margin-top:0}
 .informe .tabla table,.informe .datos table,.informe .matriz{font-size:8.5pt}
 .informe .tabla thead th,.informe .datos thead th,.informe .matriz thead th{position:static}
@@ -625,6 +657,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
             <div class="ges-combo-lista" id="mat-combo-lista"></div>
           </details>
           <!-- Subtítulo: solo en Presupuesto, mismo patrón que Trámites y Materia. -->
+          <label class="chip" id="pr-vista-filtro" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="documento"></svg><span class="chip-rot">Suministros:</span><select id="f-vista" aria-label="Contratos de suministro"><option value="con_suministros">Incluidos</option><option value="sin_suministros">Excluidos</option></select><svg class="ico chip-flecha" viewBox="0 0 24 24" aria-hidden="true" data-i="flecha"></svg></label>
           <label class="chip" id="pr-st-filtro" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="moneda"></svg><span class="chip-rot">Subtítulo:</span><select id="f-subtitulo"></select><svg class="ico chip-flecha" viewBox="0 0 24 24" aria-hidden="true" data-i="flecha"></svg></label>
           <button type="button" class="enlace" id="f-reset"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="reiniciar"></svg>Ver todas</button>
           <button type="button" class="btn-pri hoja-listo" id="f-listo">Ver resultados</button>
@@ -672,48 +705,46 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         <div class="tarjeta col" data-sec="cdc-detalle">
           <div class="t-cab"><h2 id="cdc-det-tit">Indicadores bajo 90 %</h2></div>
           <p class="t-sub" id="cdc-det-sub"></p>
-          <div class="datos" id="cdc-detalle"></div>
+          <div class="datos datos--alto" id="cdc-detalle"></div>
         </div>
       </section>
 
       <!-- ------------------------------------------------------- Presupuesto -->
       <section class="pagina" id="p-presupuesto" aria-label="Presupuesto" hidden>
-        <div class="tarjeta col" data-sec="pr-sg">
-          <div class="t-cab">
-            <h2>Presupuesto por SEREMI</h2>
-            <div class="grupo-var" id="pr-sg-vista" role="group" aria-label="Contratos de suministro">
-              <button type="button" data-vista="con_suministros" aria-pressed="true">Con suministros</button>
-              <button type="button" data-vista="sin_suministros" aria-pressed="false">Sin suministros</button>
-            </div>
-            <div class="leyenda">
-              <span><i class="k-caja" style="background:var(--primario-darken-1)"></i>Devengado</span>
-              <span><i class="k-caja" style="background:var(--chart-relleno-suave-1)"></i>Saldo por devengar</span>
+        <div class="kpis" id="pr-kpis" data-sec="pr-kpis"></div>
+        <div class="fila fila--toda fila--2-3">
+          <div class="tarjeta col angosto" data-sec="pr-st">
+            <div class="t-cab"><h2>Distribución por subtítulo</h2></div>
+            <p class="t-sub">Participación de cada subtítulo en el presupuesto. Clic en uno para filtrar las barras.</p>
+            <div class="dn" id="pr-st">
+              <div class="dn-grafico" id="pr-st-donut"></div>
+              <div class="dn-ley" id="pr-st-ley"></div>
             </div>
           </div>
-          <p class="t-sub" id="pr-sg-sub"></p>
-          <div class="dn" id="pr-st" data-sec="pr-st">
-            <div class="dn-grafico" id="pr-st-donut"></div>
-            <div class="dn-ley">
-              <h3 class="dn-tit">Distribución por subtítulo</h3>
-              <div id="pr-st-ley"></div>
+          <div class="tarjeta col ancho" data-sec="pr-sg">
+            <div class="t-cab">
+              <h2 id="pr-sg-tit">Por SEREMI</h2>
+              <div class="grupo-var" id="pr-sg-orden" role="group" aria-label="Orden de las SEREMIs">
+                <button type="button" data-orden="territorial" aria-pressed="true">De norte a sur</button>
+                <button type="button" data-orden="dev" aria-pressed="false">Mayor devengado</button>
+                <button type="button" data-orden="pct" aria-pressed="false">Mayor ejecución</button>
+              </div>
+              <div class="leyenda">
+                <span><i class="k-caja" style="background:var(--primario-darken-1)"></i>Devengado</span>
+                <span><i class="k-caja" style="background:var(--chart-relleno-suave-1)"></i>Saldo por devengar</span>
+              </div>
             </div>
+            <p class="t-sub" id="pr-sg-sub"></p>
+            <div class="barras" id="pr-sg"></div>
+            <details class="tabla" id="pr-sg-tabla" data-sec="pr-sg-tabla"></details>
           </div>
-          <div class="t-cab">
-            <h3 class="dn-tit" id="pr-sg-tit">Por SEREMI</h3>
-            <div class="grupo-var" id="pr-sg-orden" role="group" aria-label="Orden de las SEREMIs">
-              <button type="button" data-orden="territorial" aria-pressed="true">De norte a sur</button>
-              <button type="button" data-orden="dev" aria-pressed="false">Mayor devengado</button>
-              <button type="button" data-orden="pct" aria-pressed="false">Mayor ejecución</button>
-            </div>
-          </div>
-          <div class="barras" id="pr-sg"></div>
-          <details class="tabla" id="pr-sg-tabla" data-sec="pr-sg-tabla"></details>
         </div>
       </section>
 
       <!-- ------------------------------------------------- Gestión de Bienes -->
       <section class="pagina" id="p-gestion" aria-label="Gestión de Bienes" hidden>
         <div class="kpis" id="ges-kpis" data-sec="ges-kpis"></div>
+        <div class="fila fila--toda fila--mitades">
         <div class="tarjeta col" data-sec="ges-tabla">
           <div class="t-cab"><h2 id="ges-tabla-tit">Detalle por trámite</h2></div>
           <p class="t-sub" id="ges-tabla-sub"></p>
@@ -734,6 +765,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
           </div>
           <p class="t-sub" id="ges-barras-sub"></p>
           <div class="barras" id="ges-barras"></div>
+        </div>
         </div>
       </section>
 
@@ -762,7 +794,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       <!-- -------------------------------------------- Gestión de Convenios -->
       <section class="pagina" id="p-convenios" aria-label="Gestión de Convenios" hidden>
         <div class="kpis" id="cv-kpis" data-sec="cv-kpis"></div>
-        <div class="tarjeta col" data-sec="cv-tabla-ft">
+        <div class="fila fila--alta">
+        <div class="tarjeta col ancho" data-sec="cv-tabla-ft">
           <div class="t-cab">
             <h2 id="cv-tabla-ft-tit">Convenios FT</h2>
             <div class="grupo-var" id="cv-estado" role="group" aria-label="Estado del convenio">
@@ -773,10 +806,11 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
           <p class="t-sub" id="cv-tabla-ft-sub"></p>
           <div class="datos" id="cv-tabla-ft"></div>
         </div>
-        <div class="tarjeta col" data-sec="cv-tabla-tramite">
+        <div class="tarjeta col angosto" data-sec="cv-tabla-tramite">
           <div class="t-cab"><h2>Convenios en trámite</h2></div>
           <p class="t-sub" id="cv-tabla-tramite-sub"></p>
           <div class="datos" id="cv-tabla-tramite"></div>
+        </div>
         </div>
       </section>
 
@@ -827,7 +861,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
           <div class="tarjeta col angosto" data-sec="of-pend">
             <div class="t-cab"><h2>Sin responder</h2></div>
             <p class="t-sub" id="of-pend-sub"></p>
-            <div class="datos" id="of-pend"></div>
+            <div class="datos ajusta" id="of-pend"></div>
           </div>
         </div>
       </section>
@@ -864,6 +898,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         <label class="opcion"><input type="checkbox" name="sec" value="cdc-detalle" checked>Indicadores bajo 90 %</label>
       </fieldset>
       <fieldset><legend>Presupuesto</legend>
+        <label class="opcion"><input type="checkbox" name="sec" value="pr-kpis" checked>Cifras de presupuesto</label>
         <label class="opcion"><input type="checkbox" name="sec" value="pr-st" checked>Distribución por subtítulo (donut y tabla)</label>
         <label class="opcion"><input type="checkbox" name="sec" value="pr-sg" checked>Presupuesto por SEREMI (gráfico)</label>
         <label class="opcion"><input type="checkbox" name="sec" value="pr-sg-tabla">Presupuesto por SEREMI (tabla)</label>
@@ -1970,23 +2005,30 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   function pintarPresupuesto() {
     var ps = D.presupuestoSeremi, x = AGG.presupuestoSeremi(D, filtro.r, vistaPresupuesto);
     var k = subtituloPresupuesto;
-    Array.prototype.forEach.call($('pr-sg-vista').querySelectorAll('button'), function (b) {
-      b.setAttribute('aria-pressed', String(b.getAttribute('data-vista') === vistaPresupuesto));
-    });
+    $('f-vista').value = vistaPresupuesto;
     Array.prototype.forEach.call($('pr-sg-orden').querySelectorAll('button'), function (b) {
       b.setAttribute('aria-pressed', String(b.getAttribute('data-orden') === ordenPresupuesto));
     });
     $('f-subtitulo').value = k === null ? '' : String(k);
 
-    // Las cifras del texto son del subtítulo elegido, si lo hay.
+    // Las cifras de las tarjetas son del subtítulo elegido, si lo hay. Antes
+    // iban en un párrafo de cuatro líneas: ahora se leen de un vistazo, como
+    // en las demás páginas, y el texto queda para el alcance y la fuente.
     var t = k === null ? x : { budget: x.porSubtitulo[k].budget, dev: x.porSubtitulo[k].dev,
                                 pct: x.porSubtitulo[k].pct, saldo: x.porSubtitulo[k].budget - x.porSubtitulo[k].dev };
-    $('pr-sg-sub').textContent = seremiNombre() + (k === null ? '' : ', ' + nombreSubtitulo(k)) +
-      ': presupuesto ' + money(t.budget) + ', devengado ' + money(t.dev) +
-      ', ejecución ' + pct(t.pct) + ', saldo por devengar ' + money(t.saldo) + '. Corte ' + fecha(ps.corte) +
-      (vistaPresupuesto === 'con_suministros' ? ', con' : ', sin') + ' contratos de suministro. ' +
-      'Alcance: ST21 solo comisiones de servicio, ST22, ST24 sin gastos en personal y ST29. ' +
-      'Fuente: Panel Presupuestario MBN, página 7, que lo declara sujeto a conciliación.';
+    var ambito = seremiNombre() + (k === null ? '' : ' · ' + nombreSubtitulo(k)) + ' · ' +
+      (vistaPresupuesto === 'con_suministros' ? 'con' : 'sin') + ' contratos de suministro';
+    $('pr-kpis').innerHTML = [
+      ['moneda', 'Presupuesto vigente', money(t.budget), ambito],
+      ['listo', 'Devengado', money(t.dev), 'Corte ' + fecha(ps.corte)],
+      ['bandera', 'Ejecución', pct(t.pct), 'Devengado ÷ presupuesto'],
+      ['reloj', 'Saldo por devengar', money(t.saldo), 'Presupuesto − devengado']
+    ].map(function (c) {
+      return '<div class="tarjeta kpi"><div class="kpi-rot">' + ico(c[0], 'ico--22') + c[1] + '</div>' +
+        '<div class="kpi-num kpi-num--money">' + c[2] + '</div><div class="kpi-pie">' + esc(c[3]) + '</div></div>';
+    }).join('');
+    $('pr-sg-sub').textContent = 'Alcance: ST21 solo comisiones de servicio, ST22, ST24 sin gastos en personal y ST29. ' +
+      'Fuente: Panel Presupuestario MBN, página 7, que lo declara sujeto a conciliación. Clic en una SEREMI para filtrar.';
     pintarDonutSubtitulos(x);
     focoSubtitulo(null);
 
@@ -2116,7 +2158,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     });
     $('cv-tabla-ft').innerHTML = filasFT.length ? tablaHtml(
       ['SEREMI', 'Materia', 'Nombre Convenio', 'Inicio', 'Fin', 'Tipo Otorgante', 'Entidad Otorgante', 'Monto Convenio'],
-      filasFT, true) : '<p class="vacio">Sin convenios para este filtro.</p>';
+      filasFT, true, [1, 2, 5, 6]) : '<p class="vacio">Sin convenios para este filtro.</p>';
 
     // ---- Convenios en trámite
     $('cv-tabla-tramite-sub').textContent = 'Convenios en proceso de negociación o firma' +
@@ -2125,7 +2167,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       return [esc(D.regiones[c.r].nombre), esc(x.materias[c.materia]), esc(c.organismoExterno), pesos(c.monto)];
     });
     $('cv-tabla-tramite').innerHTML = filasTr.length ? tablaHtml(
-      ['SEREMI', 'Materia', 'Organismo externo', 'Monto Convenio'], filasTr, true)
+      ['SEREMI', 'Materia', 'Organismo externo', 'Monto Convenio'], filasTr, true, [1, 2])
       : '<p class="vacio">Sin convenios en trámite para este filtro.</p>';
   }
 
@@ -2193,6 +2235,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     if (pagina !== 'convenios') $('mat-filtro').removeAttribute('open');
     // Y el de Subtítulo, solo en Presupuesto.
     $('pr-st-filtro').hidden = pagina !== 'presupuesto';
+    $('pr-vista-filtro').hidden = pagina !== 'presupuesto';
     pintarSello();
     pintarAviso();
     guardarUrl();
@@ -2440,10 +2483,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     ordenPresupuesto = b.getAttribute('data-orden');
     pintarPresupuesto();
   });
-  $('pr-sg-vista').addEventListener('click', function (ev) {
-    var b = ev.target.closest('button[data-vista]');
-    if (!b) return;
-    vistaPresupuesto = b.getAttribute('data-vista');
+  $('f-vista').addEventListener('change', function () {
+    vistaPresupuesto = this.value;
     pintarPresupuesto();
   });
   $('dc-var').addEventListener('click', function (ev) {
