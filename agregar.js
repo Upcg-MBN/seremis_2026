@@ -432,7 +432,34 @@
     return {
       cbr: medida('cbr'), proceso: medida('proceso'),
       positivas: medida('positivas'), negativas: medida('negativas'),
-      resA: medida('resA'), resB: medida('resB'), resC: medida('resC')
+      resA: medida('resA'), resB: medida('resB'), resC: medida('resC'),
+      resAPos: medida('resAPos'), resANeg: medida('resANeg'),
+      resBPos: medida('resBPos'), resBNeg: medida('resBNeg'),
+      resCPos: medida('resCPos'), resCNeg: medida('resCNeg')
+    };
+  }
+
+  // Eficiencia por abogado (Resumen ejecutivo del DCPR): resoluciones
+  // generadas ÷ abogados de dotación, por tipo (A, B, C) y en total. Es del año
+  // a la fecha, sin comparar con el año anterior: la dotación es una foto
+  // actual y dividir el año pasado por ella no tendría sentido. Sin abogados
+  // registrados la razón es null, nunca 0 ni Infinity.
+  function eficiencia(D, r) {
+    var filas = D.regularizacion.filas;
+    var todas = r === null || r === undefined;
+    var abogados = 0, tipo = { A: 0, B: 0, C: 0 };
+    filas.forEach(function (f) {
+      if (!todas && f.r !== r) return;
+      abogados += f.abogados;
+      tipo.A += f.resA.actual; tipo.B += f.resB.actual; tipo.C += f.resC.actual;
+    });
+    function razon(n) { return abogados > 0 ? n / abogados : null; }
+    var total = tipo.A + tipo.B + tipo.C;
+    return {
+      abogados: abogados, resoluciones: total, razon: razon(total),
+      tipos: ['A', 'B', 'C'].map(function (t) {
+        return { tipo: t, resoluciones: tipo[t], razon: razon(tipo[t]) };
+      })
     };
   }
 
@@ -603,7 +630,7 @@
     cdc: cdc, estadoCumpl: estadoCumpl, oficios: oficios, catastro: catastro,
     participacion: participacion, bienes: bienes, dcpr: dcpr, terreno: terreno,
     presupuestoSeremi: presupuestoSeremi, presupuestoRegiones: presupuestoRegiones,
-    regularizacion: regularizacion, convenios: convenios,
+    regularizacion: regularizacion, eficiencia: eficiencia, convenios: convenios,
     semaforo: semaforo, alertas: alertas, cortes: cortes
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

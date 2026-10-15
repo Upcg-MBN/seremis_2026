@@ -112,6 +112,8 @@ button{font:inherit; color:inherit}
 .alertas-ej .alerta{margin-bottom:0.5rem}
 .estado{margin-left:auto; display:flex; align-items:center; gap:0.5rem; font-size:0.9375rem; color:var(--gris-60)}
 .estado--alerta{color:var(--error-darken-3)}
+.estado a{color:var(--primario-darken-1); text-decoration:underline; text-underline-offset:0.15em}
+.estado a:hover{color:var(--primario-darken-3, var(--primario-darken-1))}
 .filtros-hoja{display:contents}
 .btn-filtros,.hoja-cab,.hoja-listo{display:none}
 
@@ -169,6 +171,10 @@ button{font:inherit; color:inherit}
 /* Cifras en pesos (p. ej. "M$ 4.198.585.413"): a 2.75rem no caben en el ancho
    de la tarjeta. Mismo tipo y peso, tamaño menor. */
 .kpi-num--money{font-size:1.625rem}
+/* Gestión Regularización: las seis tarjetas comparten filas (rótulo, cifra,
+   pie), así la cifra queda a la misma altura aunque el rótulo ocupe 1, 2 o 3
+   líneas. */
+#dc-kpis .tarjeta.kpi{display:grid; grid-row:span 3; grid-template-rows:subgrid; row-gap:0.375rem; align-content:start}
 .kpi-pie{display:flex; align-items:center; gap:0.375rem; font-size:0.8125rem; line-height:1.35; color:var(--gris-60)}
 /* Para una oración completa (p. ej. el % ya cerrado del rezago) en vez de la
    fila corta «etiqueta: valor»: se necesita que el texto haga salto de línea
@@ -212,6 +218,10 @@ button.barra-fila:hover{background:var(--gris-5)}
 .barra-fila[aria-pressed="true"]{background:var(--secundario-base)}
 .con-sel .barra-fila:not([aria-pressed="true"]) .relleno{opacity:.35}
 /* Umbral declarado (90 % en el CDC): punteado, para no confundirse con una barra. */
+/* Marca del total del año anterior sobre barras apiladas: más alta y con
+   contorno blanco, para que se lea sobre cualquiera de los dos colores. */
+.meta-tick--ref{top:-6px; bottom:-6px; width:3px; background:var(--negro-base); box-shadow:0 0 0 1px var(--blanco-base)}
+.k-tick--ref{width:3px; height:1.125rem; background:var(--negro-base); box-shadow:0 0 0 1px var(--blanco-base)}
 .meta-tick--umbral{width:0; background:none; border-left:2px dashed var(--gris-60)}
 /* Oficios: espera del pendiente más antiguo, sobre la barra de la mediana. */
 .meta-tick--espera{background:var(--gris-70)}
@@ -744,6 +754,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       <!-- ------------------------------------------------- Gestión de Bienes -->
       <section class="pagina" id="p-gestion" aria-label="Gestión de Bienes" hidden>
         <div class="kpis" id="ges-kpis" data-sec="ges-kpis"></div>
+        <p class="nota" id="ges-nota"><b>Nota:</b> los trámites que se muestran son los priorizados por el Comité Económico. Los casos finalizados se refieren a los que aún están abiertos en los sistemas informáticos.</p>
         <div class="fila fila--toda fila--mitades">
         <div class="tarjeta col" data-sec="ges-tabla">
           <div class="t-cab"><h2 id="ges-tabla-tit">Detalle por trámite</h2></div>
@@ -772,6 +783,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       <!-- ------------------------------------------------ Gestión Regularización -->
       <section class="pagina" id="p-dcpr" aria-label="Gestión Regularización" hidden>
         <div class="kpis kpis--6" id="dc-kpis" data-sec="dc-kpis"></div>
+        <div class="fila fila--toda fila--2-3">
         <div class="tarjeta col ancho" data-sec="dc-resol-barras">
           <div class="t-cab">
             <h2 id="dc-resol-tit">Resoluciones por SEREMI</h2>
@@ -781,13 +793,21 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
               <button type="button" data-var="resC" aria-pressed="false">Resolución C</button>
             </div>
             <div class="leyenda">
-              <span><i class="k-caja" id="dc-ley-color"></i><span id="dc-ley-actual"></span></span>
-              <span><i class="k-tick"></i><span id="dc-ley-anterior"></span></span>
+              <span><i class="k-caja" style="background:var(--exito-darken-3)"></i><span id="dc-ley-pos"></span></span>
+              <span><i class="k-caja" style="background:var(--error-darken-3)"></i><span id="dc-ley-neg"></span></span>
+              <span><i class="k-tick k-tick--ref"></i><span id="dc-ley-anterior"></span></span>
             </div>
           </div>
           <p class="t-sub" id="dc-resol-sub"></p>
           <div class="barras" id="dc-resol"></div>
           <details class="tabla" id="dc-resol-tabla" data-sec="dc-resol-tabla"></details>
+        </div>
+        <div class="tarjeta col angosto" data-sec="dc-efi">
+          <div class="t-cab"><h2 id="dc-efi-tit">Eficiencia por abogado</h2></div>
+          <p class="t-sub" id="dc-efi-sub"></p>
+          <div class="barras barras--angosta" id="dc-efi"></div>
+          <details class="tabla" id="dc-efi-tabla" data-sec="dc-efi-tabla"></details>
+        </div>
         </div>
       </section>
 
@@ -911,6 +931,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       <fieldset><legend>Gestión Regularización</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="dc-kpis" checked>Indicadores</label>
         <label class="opcion"><input type="checkbox" name="sec" value="dc-resol-barras" checked>Resoluciones por SEREMI</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="dc-efi" checked>Eficiencia por abogado</label>
       </fieldset>
       <fieldset><legend>Gestión de Convenios</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="cv-kpis" checked>Indicadores</label>
@@ -1082,7 +1103,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       e.title = cortesPorSeccion();
     } else {
       e.className = 'estado';
-      e.innerHTML = ico('calendario') + estadoPagina();
+      e.innerHTML = ico('calendario') + '<span>' + estadoPagina() + '</span>';
       e.removeAttribute('title');
     }
   }
@@ -1092,7 +1113,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // resolución que es de agosto.
   function corteDcpr() {
     var d = ultimo(D.dcpr.meses), f = D.regularizacion.corteResol;
-    return mesLargo(d) + (f && f !== d ? ' (sub-panel «Flujos»: ' + mesLargo(f) + ')' : '');
+    return mesLargo(d) + (f && f !== d ? ' («Análisis Resoluciones A, B y C»: ' + mesLargo(f) + ')' : '');
   }
   function cortes() {
     var c = ultimo(D.cdc.meses), d = ultimo(D.dcpr.meses);
@@ -1103,16 +1124,28 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // CDC/DCPR que no cambiaba al moverse a Presupuesto, Gestión de Bienes o
   // Gestión de Convenios. Las tres páginas sin fuente real lo dicen explícito,
   // en vez de mostrar una fecha que no es de nadie.
+  // Enlaces a los reportes de los que se extrae cada dimensión (mismas URL
+  // que URL_CDC, URL_PRESUPUESTO, URL_DCPR y la de Panel-Autoridades en
+  // extraer.py). Se abren en otra pestaña.
+  var ENLACES = {
+    cdc: 'https://upcg-mbn.github.io/panel_gestion_2026/',
+    presupuesto: 'https://presupuestombn.github.io/panel-presupuestario-mbn/',
+    gestion: 'https://upcg-mbn.github.io/Panel-Autoridades/',
+    dcpr: 'https://bienesnacionales.github.io/mbn-dcpr-reportes/'
+  };
+  function enlace(pag, texto) {
+    return '<a href="' + ENLACES[pag] + '" target="_blank" rel="noopener noreferrer">' + esc(texto) + '</a>';
+  }
   function estadoPagina() {
     switch (pagina) {
       case 'cdc':
-        return 'Fuente: Panel de Gestión Institucional 2026 (DIPLAP) · Corte: ' + mesLargo(ultimo(D.cdc.meses));
+        return 'Fuente: ' + enlace('cdc', 'Panel de Gestión Institucional 2026 (DIPLAP)') + ' · Corte: ' + esc(mesLargo(ultimo(D.cdc.meses)));
       case 'presupuesto':
-        return 'Fuente: Panel Presupuestario MBN, página 7 (Depto. de Presupuesto) · Corte: ' + fecha(D.presupuestoSeremi.corte);
+        return 'Fuente: ' + enlace('presupuesto', 'Panel Presupuestario MBN, página 7 (Depto. de Presupuesto)') + ' · Corte: ' + esc(fecha(D.presupuestoSeremi.corte));
       case 'gestion':
-        return 'Fuente: Panel-Autoridades · Corte: ' + mesLargo(D.gestion.mes_parcial);
+        return 'Fuente: ' + enlace('gestion', 'Panel-Autoridades') + ' · Corte: ' + esc(mesLargo(D.gestion.mes_parcial));
       case 'dcpr':
-        return 'Fuente: Panel de Gestión Mensual DCPR · Corte: ' + corteDcpr();
+        return 'Fuente: ' + enlace('dcpr', 'Panel de Gestión Mensual DCPR') + ' · Corte: ' + esc(corteDcpr());
       case 'convenios':
         return 'Fuente: Base_Convenios.xlsx (U. Convenios) · Corte: ' +
           (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte en la planilla');
@@ -1735,7 +1768,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // el de Gestión de Bienes (mismo componente .meta-tick para el año anterior).
   var varResol = 'resA';
   var VAR_RESOL = { resA: 'Resolución A', resB: 'Resolución B', resC: 'Resolución C' };
-  var COLOR_RESOL = { resA: '--chart-1', resB: '--chart-2', resC: '--chart-3' };
 
   function pintarDcpr() {
     var x = AGG.dcpr(D, filtro.r);
@@ -1748,7 +1780,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     // Cada tarjeta de «Flujos» dice su mes: puede ir atrás del corte de la
     // página (ver corteDcpr).
     function piePeriodo(corte, corteAnt, medida) {
-      return '<div class="kpi-pie">A ' + mesLargo(corte) + ' · ' + (corteAnt
+      return '<div class="kpi-pie">' + (corteAnt
         ? 'vs. mismo periodo ' + anioDe(corteAnt) + ': ' + celdaVar(medida.variacion)
         : 'sin dato de ' + (anioDe(corte) - 1) + ' con qué comparar') + '</div>';
     }
@@ -1761,24 +1793,20 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     // reutiliza --chart-estado-alerta (ámbar), el más parecido, igual que en
     // Gestión de Bienes. Títulos entregados queda con el color por defecto.
     $('dc-kpis').innerHTML = [
-      ['sube', 'Ingresados', num(ingValor),
-       '<div class="kpi-pie">Nuevos ingresos del mes, a ' + mesLargo(ing.mes) + '</div>', '--chart-3'],
+      ['sube', 'Ingresados', num(ingValor), '', '--chart-3'],
       ['documento', 'Títulos entregados', num(x.titulos.actual),
-       '<div class="kpi-pie">' + desde(x.titulos) + '</div><div class="kpi-pie">' + num(x.porEntregar) + ' disponibles por entregar</div>'],
+       '<div class="kpi-pie">' + desde(x.titulos) + '</div>'],
       ['listo', 'Resoluciones positivas (A+B+C) ' + anioDe(g.corteResol), num(y.positivas.actual),
        piePeriodo(g.corteResol, g.corteResolAnterior, y.positivas), '--exito-darken-3'],
       ['cerrar', 'Resoluciones negativas (A+B+C) ' + anioDe(g.corteResol), num(y.negativas.actual),
        piePeriodo(g.corteResol, g.corteResolAnterior, y.negativas), '--error-darken-3'],
-      ['reloj', 'Casos en proceso', num(y.proceso.actual),
-       '<div class="kpi-pie">A ' + mesLargo(g.corteProceso) + ' · ' + (g.corteProcesoAnterior
-         ? 'vs. ' + mesLargo(g.corteProcesoAnterior) + ': ' + celdaVar(y.proceso.variacion)
-         : 'sin dato de ' + (anioDe(g.corteProceso) - 1) + ' con qué comparar') + '</div>', '--chart-estado-alerta'],
+      ['reloj', 'Casos en proceso', num(y.proceso.actual), '', '--chart-estado-alerta'],
       ['bandera', 'Casos ingresados al CBR ' + anioDe(g.corteCbr), num(y.cbr.actual),
        piePeriodo(g.corteCbr, g.corteCbrAnterior, y.cbr), '--negro-base']
     ].map(function (t) {
       var estilo = t[4] ? ' style="color:var(' + t[4] + ')"' : '';
       return '<div class="tarjeta kpi"><div class="kpi-rot">' + ico(t[0], 'ico--22') + t[1] + '</div>' +
-        '<div class="kpi-num"' + estilo + '>' + t[2] + '</div>' + t[3] + '</div>';
+        '<div class="kpi-num"' + estilo + '>' + t[2] + '</div>' + (t[3] || '<div class="kpi-pie"></div>') + '</div>';
     }).join('');
 
     // Resoluciones por SEREMI: un gráfico, no tres — botones para elegir el
@@ -1789,26 +1817,37 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     });
     var corte = mesLargo(g.corteResol), corteAnt = g.corteResolAnterior ? mesLargo(g.corteResolAnterior) : null;
     $('dc-resol-tit').textContent = VAR_RESOL[varResol] + ' por SEREMI';
-    $('dc-ley-color').style.background = 'var(' + COLOR_RESOL[varResol] + ')';
-    $('dc-ley-actual').textContent = VAR_RESOL[varResol] + ' ' + anioDe(g.corteResol);
-    $('dc-ley-anterior').textContent = corteAnt ? 'Mismo mes ' + anioDe(g.corteResolAnterior) : 'Sin dato del año anterior';
+    $('dc-ley-pos').textContent = 'Positivas ' + anioDe(g.corteResol);
+    $('dc-ley-neg').textContent = 'Negativas ' + anioDe(g.corteResol);
+    $('dc-ley-anterior').textContent = corteAnt ? 'Total mismo mes ' + anioDe(g.corteResolAnterior) : 'Sin dato del año anterior';
     $('dc-resol-sub').textContent = VAR_RESOL[varResol] + ' acumuladas ' + anioDe(g.corteResol) + ' a ' + corte +
-      (corteAnt ? ', comparadas con el mismo periodo de ' + anioDe(g.corteResolAnterior) : '') +
-      '. Fuente: sub-panel «Flujos» del DCPR. Haz clic en una SEREMI para filtrarla en todo el panel.';
-    var valoresResol = D.regiones.map(function (reg, r) { return AGG.regularizacion(D, r)[varResol]; });
-    var topeResol = Math.max.apply(null, valoresResol.map(function (v) { return Math.max(v.actual, v.anterior || 0); })) || 1;
+      ', separadas en positivas y negativas' +
+      (corteAnt ? '; la marca es el total (positivas + negativas) del mismo periodo de ' + anioDe(g.corteResolAnterior) : '') +
+      '. Fuente: «Análisis Resoluciones A, B y C» del DCPR. Haz clic en una SEREMI para filtrarla en todo el panel.';
+    // Cada SEREMI: total del tipo (largo de la barra y de la marca) y su
+    // parte positiva y negativa (los dos tramos apilados).
+    var valoresResol = D.regiones.map(function (reg, r) {
+      var a = AGG.regularizacion(D, r);
+      return { tot: a[varResol], pos: a[varResol + 'Pos'], neg: a[varResol + 'Neg'] };
+    });
+    var topeResol = Math.max.apply(null, valoresResol.map(function (v) { return Math.max(v.tot.actual, v.tot.anterior || 0); })) || 1;
     var selResol = function (r) { return ' data-r="' + r + '" aria-pressed="' + (filtro.r === r) + '"'; };
+    var sinDato = function (m) { return m.anterior === null || m.anterior === undefined ? 'sin dato' : num(m.anterior); };
     $('dc-resol').classList.toggle('con-sel', filtro.r !== null);
     $('dc-resol').innerHTML = D.regiones.map(function (reg, r) {
       var v = valoresResol[r];
-      var tick = v.anterior !== null && v.anterior !== undefined
-        ? '<span class="meta-tick" style="left:' + Math.min(100, v.anterior / topeResol * 100).toFixed(1) + '%"></span>' : '';
-      return '<button type="button" class="barra-fila"' + selResol(r) + ' title="' + esc(reg.nombre) + ': ' + num(v.actual) +
-        ' · ' + anioDe(g.corteResolAnterior) + ': ' + (v.anterior === null || v.anterior === undefined ? 'sin dato' : num(v.anterior)) + '">' +
+      var tick = v.tot.anterior !== null && v.tot.anterior !== undefined
+        ? '<span class="meta-tick meta-tick--ref" style="left:' + Math.min(100, v.tot.anterior / topeResol * 100).toFixed(1) + '%"></span>' : '';
+      return '<button type="button" class="barra-fila"' + selResol(r) + ' title="' + esc(reg.nombre) + ': ' + num(v.tot.actual) +
+        ' (positivas ' + num(v.pos.actual) + ', negativas ' + num(v.neg.actual) + ')' +
+        ' · ' + anioDe(g.corteResolAnterior) + ': ' + sinDato(v.tot) +
+        ' (positivas ' + sinDato(v.pos) + ', negativas ' + sinDato(v.neg) + ')">' +
         '<span class="barra-nom">' + esc(reg.nombre) + '</span>' +
-        '<span class="pista"><span class="relleno" style="width:' + (v.actual / topeResol * 100).toFixed(1) +
-        '%; background:var(' + COLOR_RESOL[varResol] + ')"></span>' + tick + '</span>' +
-        '<span class="barra-val">' + num(v.actual) + '</span></button>';
+        '<span class="pista pista--apilada">' +
+        '<span class="relleno" style="width:' + (v.pos.actual / topeResol * 100).toFixed(1) + '%; background:var(--exito-darken-3)"></span>' +
+        '<span class="relleno" style="width:' + (v.neg.actual / topeResol * 100).toFixed(1) + '%; background:var(--error-darken-3)"></span>' +
+        tick + '</span>' +
+        '<span class="barra-val">' + num(v.tot.actual) + '</span></button>';
     }).join('');
 
     // Vista de tabla del mismo gráfico (ESTANDAR-VISUALIZACION.md §4): los
@@ -1830,6 +1869,40 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
        'Resolución B', 'vs ' + (corteAnt ? anioDe(g.corteResolAnterior) : '—'),
        'Resolución C', 'vs ' + (corteAnt ? anioDe(g.corteResolAnterior) : '—')],
       filasResol, true);
+
+    // Eficiencia por abogado (Resumen ejecutivo del DCPR): resoluciones A+B+C
+    // generadas ÷ abogados de dotación. Una sola serie en azul; la SEREMI sin
+    // abogados registrados no tiene razón (sin barra, «sin abogados»).
+    var efi = D.regiones.map(function (reg, r) { return AGG.eficiencia(D, r); });
+    var tope = Math.max.apply(null, efi.map(function (e) { return e.razon || 0; })) || 1;
+    var nacional = AGG.eficiencia(D, null);
+    $('dc-efi-sub').textContent = 'Resoluciones A + B + C de ' + anioDe(g.corteResol) + ' a ' + corte +
+      ' por abogado de dotación (sectorial + convenios' + (g.corteDotacion ? ', corte ' + g.corteDotacion : '') +
+      '). Total país: ' + dec(nacional.razon, 1) + ' por abogado. Fuente: resoluciones de «Análisis Resoluciones A, B y C» y dotación del Resumen ejecutivo, ambos del DCPR.';
+    $('dc-efi').classList.toggle('con-sel', filtro.r !== null);
+    $('dc-efi').innerHTML = D.regiones.map(function (reg, r) {
+      var e = efi[r];
+      var barra = e.razon === null ? ''
+        : '<span class="relleno" style="width:' + (e.razon / tope * 100).toFixed(1) + '%"></span>';
+      var val = e.razon === null ? 'sin abogados' : dec(e.razon, 1) + ' · ' + e.abogados + ' abog.';
+      return '<button type="button" class="barra-fila"' + selResol(r) + ' title="' + esc(reg.nombre) + ': ' +
+        num(e.resoluciones) + ' resoluciones, ' + e.abogados + ' abogado(s)' +
+        (e.razon === null ? '' : ' → ' + dec(e.razon, 1) + ' por abogado') + '">' +
+        '<span class="barra-nom">' + esc(reg.nombre) + '</span>' +
+        '<span class="pista">' + barra + '</span>' +
+        '<span class="barra-val">' + val + '</span></button>';
+    }).join('');
+    var filasEfi = regiones().map(function (r) {
+      var e = AGG.eficiencia(D, r);
+      return [esc(D.regiones[r].nombre), String(e.abogados)].concat(e.tipos.map(function (t) { return dec(t.razon, 1); }),
+        [dec(e.razon, 1)]);
+    });
+    if (filtro.r === null) {
+      filasEfi.push(['<b>Total país</b>', String(nacional.abogados)].concat(nacional.tipos.map(function (t) { return dec(t.razon, 1); }),
+        [dec(nacional.razon, 1)]));
+    }
+    tablaDe($('dc-efi-tabla'), 'Ver tabla de datos',
+      ['SEREMI', 'Abogados', 'Res. A', 'Res. B', 'Res. C', 'A + B + C'], filasEfi, true);
   }
 
   // ------------------------------------------------------ gobierno en terreno
