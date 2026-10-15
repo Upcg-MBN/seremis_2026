@@ -192,6 +192,40 @@ button.barra-fila:hover{background:var(--gris-5)}
 .meta-tick--alerta{background:var(--chart-estado-alerta)}
 .meta-tick--critico{background:var(--error-darken-3)}
 .k-tick{width:2px; height:0.875rem; background:var(--gris-70)}
+/* Presupuesto por SEREMI: el largo del tramo claro es el presupuesto, el
+   relleno azul dentro es lo devengado y lo claro que sobra, el saldo por
+   devengar. Así las cuatro medidas caben en un solo eje, sin el segundo eje
+   de % que usa la fuente (ESTANDAR-VISUALIZACION.md §4). */
+.pista--sg{background:transparent}
+.sg-ppto{display:block; height:100%; background:var(--chart-relleno-suave-1); border-radius:0 var(--radius-s) var(--radius-s) 0}
+.con-sel .barra-fila:not([aria-pressed="true"]) .sg-ppto{opacity:.35}
+/* Donut de subtítulos. Parte de un todo de un vistazo (4 segmentos): los
+   colores siguen al subtítulo en orden fijo (--chart-1…4), 2 px de fondo
+   entre segmentos. La leyenda ES la tabla de datos: el 0,6 % de ST29 no se
+   ve en el anillo y no se agranda (sería mentir el ángulo), se lee aquí. */
+.dn{display:flex; flex-wrap:wrap; align-items:center; gap:1rem 2rem; padding:0.25rem 0 1rem; border-bottom:1px solid var(--gris-10)}
+.dn-grafico{flex:none; width:11rem; height:11rem}
+.dn-grafico svg{display:block; width:100%; height:100%}
+.dn-seg{transition:opacity var(--duration-base) var(--ease-standard)}
+.dn.con-foco .dn-seg:not(.activo){opacity:.3}
+.dn-cen-num{font-family:var(--font-slab); font-weight:700; fill:var(--negro-text)}
+.dn-cen-rot{fill:var(--gris-60)}
+.dn-ley{flex:1 1 24rem; min-width:0; overflow-x:auto}
+.dn-tit{margin:0 0 0.5rem; font-size:1rem; font-weight:500}
+.dn-ley table{border-collapse:collapse; width:100%; font-size:max(12px,0.8125rem)}
+.dn-ley th{padding:0.25rem 0.5rem; border-bottom:1px solid var(--gris-20); font-weight:500; color:var(--gris-60); text-align:right; white-space:nowrap}
+.dn-ley td{padding:0.375rem 0.5rem; border-bottom:1px solid var(--gris-10); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.dn-ley th:first-child,.dn-ley td:first-child{text-align:left; white-space:normal}
+.dn-ley tbody tr.activo td{background:var(--gris-5)}
+.dn-ley tfoot td{font-weight:500; border-bottom:0}
+.dn-sw{display:inline-block; width:0.75rem; height:0.75rem; border-radius:2px; margin-right:0.5rem; vertical-align:-1px}
+/* Clic en un segmento o una fila elige ese subtítulo en el filtro de arriba
+   (atajo de mouse; el <select> es el camino accesible). */
+.dn-seg,.dn-ley tbody tr{cursor:pointer}
+.dn-tit + .grupo-var{margin-left:auto}
+/* .chip es flex: sin esto el atributo hidden no lo oculta. */
+.chip[hidden]{display:none}
+@media (max-width:760px){.dn-grafico{width:9rem; height:9rem}}
 /* Apiladas: separación de 2 px en blanco entre tramos, sin pista gris debajo. */
 .pista--apilada{display:flex; gap:2px}
 .pista--apilada .relleno{border-radius:0}
@@ -590,6 +624,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
               <svg class="ico chip-flecha" viewBox="0 0 24 24" aria-hidden="true" data-i="flecha"></svg></summary>
             <div class="ges-combo-lista" id="mat-combo-lista"></div>
           </details>
+          <!-- Subtítulo: solo en Presupuesto, mismo patrón que Trámites y Materia. -->
+          <label class="chip" id="pr-st-filtro" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="moneda"></svg><span class="chip-rot">Subtítulo:</span><select id="f-subtitulo"></select><svg class="ico chip-flecha" viewBox="0 0 24 24" aria-hidden="true" data-i="flecha"></svg></label>
           <button type="button" class="enlace" id="f-reset"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" data-i="reiniciar"></svg>Ver todas</button>
           <button type="button" class="btn-pri hoja-listo" id="f-listo">Ver resultados</button>
         </div>
@@ -642,11 +678,36 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 
       <!-- ------------------------------------------------------- Presupuesto -->
       <section class="pagina" id="p-presupuesto" aria-label="Presupuesto" hidden>
-        <div class="kpis" id="pr-kpis" data-sec="pr-kpis"></div>
-        <div class="tarjeta col" data-sec="pr-tabla">
-          <div class="t-cab"><h2>Detalle por SEREMI</h2></div>
-          <p class="t-sub" id="pr-tabla-sub"></p>
-          <div class="datos" id="pr-tabla"></div>
+        <div class="tarjeta col" data-sec="pr-sg">
+          <div class="t-cab">
+            <h2>Presupuesto por SEREMI</h2>
+            <div class="grupo-var" id="pr-sg-vista" role="group" aria-label="Contratos de suministro">
+              <button type="button" data-vista="con_suministros" aria-pressed="true">Con suministros</button>
+              <button type="button" data-vista="sin_suministros" aria-pressed="false">Sin suministros</button>
+            </div>
+            <div class="leyenda">
+              <span><i class="k-caja" style="background:var(--primario-darken-1)"></i>Devengado</span>
+              <span><i class="k-caja" style="background:var(--chart-relleno-suave-1)"></i>Saldo por devengar</span>
+            </div>
+          </div>
+          <p class="t-sub" id="pr-sg-sub"></p>
+          <div class="dn" id="pr-st" data-sec="pr-st">
+            <div class="dn-grafico" id="pr-st-donut"></div>
+            <div class="dn-ley">
+              <h3 class="dn-tit">Distribución por subtítulo</h3>
+              <div id="pr-st-ley"></div>
+            </div>
+          </div>
+          <div class="t-cab">
+            <h3 class="dn-tit" id="pr-sg-tit">Por SEREMI</h3>
+            <div class="grupo-var" id="pr-sg-orden" role="group" aria-label="Orden de las SEREMIs">
+              <button type="button" data-orden="territorial" aria-pressed="true">De norte a sur</button>
+              <button type="button" data-orden="dev" aria-pressed="false">Mayor devengado</button>
+              <button type="button" data-orden="pct" aria-pressed="false">Mayor ejecución</button>
+            </div>
+          </div>
+          <div class="barras" id="pr-sg"></div>
+          <details class="tabla" id="pr-sg-tabla" data-sec="pr-sg-tabla"></details>
         </div>
       </section>
 
@@ -803,8 +864,9 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         <label class="opcion"><input type="checkbox" name="sec" value="cdc-detalle" checked>Indicadores bajo 90 %</label>
       </fieldset>
       <fieldset><legend>Presupuesto</legend>
-        <label class="opcion"><input type="checkbox" name="sec" value="pr-kpis" checked>Indicadores de ejecución</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="pr-tabla" checked>Detalle por SEREMI</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="pr-st" checked>Distribución por subtítulo (donut y tabla)</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="pr-sg" checked>Presupuesto por SEREMI (gráfico)</label>
+        <label class="opcion"><input type="checkbox" name="sec" value="pr-sg-tabla">Presupuesto por SEREMI (tabla)</label>
       </fieldset>
       <fieldset><legend>Gestión de Bienes</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="ges-kpis" checked>Indicadores de ingreso, finalizados, stock y rezago</label>
@@ -854,7 +916,9 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 (function () {
   'use strict';
 
-  var DIAS_FRESCO = 2;   // pasado esto, el panel avisa que la carga no corrió
+  // Carga mensual (13-10-2026): un mes y unos días de margen. Pasado esto,
+  // el panel avisa que la actualización del mes no se hizo.
+  var DIAS_FRESCO = 35;
   var D = window.DATOS, MAPA = window.MAPA;
   var $ = function (id) { return document.getElementById(id); };
 
@@ -987,6 +1051,14 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       e.removeAttribute('title');
     }
   }
+  // El informe principal del DCPR y su sub-panel «Flujos» no se actualizan
+  // juntos (sep-2026: el informe trae septiembre, Flujos sigue en agosto).
+  // Cuando difieren se dicen los dos, para no rotular de septiembre una
+  // resolución que es de agosto.
+  function corteDcpr() {
+    var d = ultimo(D.dcpr.meses), f = D.regularizacion.corteResol;
+    return mesLargo(d) + (f && f !== d ? ' (sub-panel «Flujos»: ' + mesLargo(f) + ')' : '');
+  }
   function cortes() {
     var c = ultimo(D.cdc.meses), d = ultimo(D.dcpr.meses);
     return c === d ? 'CDC y DCPR a ' + mesLargo(c) : 'CDC a ' + mesLargo(c) + ' · DCPR a ' + mesLargo(d);
@@ -1001,11 +1073,11 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       case 'cdc':
         return 'Fuente: Panel de Gestión Institucional 2026 (DIPLAP) · Corte: ' + mesLargo(ultimo(D.cdc.meses));
       case 'presupuesto':
-        return 'Fuente: Panel Presupuestario MBN (Depto. de Presupuesto) · Corte: ' + mesLargo(D.presupuesto.corte);
+        return 'Fuente: Panel Presupuestario MBN, página 7 (Depto. de Presupuesto) · Corte: ' + fecha(D.presupuestoSeremi.corte);
       case 'gestion':
         return 'Fuente: Panel-Autoridades · Corte: ' + mesLargo(D.gestion.mes_parcial);
       case 'dcpr':
-        return 'Fuente: Panel de Gestión Mensual DCPR · Corte: ' + mesLargo(ultimo(D.dcpr.meses));
+        return 'Fuente: Panel de Gestión Mensual DCPR · Corte: ' + corteDcpr();
       case 'convenios':
         return 'Fuente: Base_Convenios.xlsx (U. Convenios) · Corte: ' +
           (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte en la planilla');
@@ -1025,9 +1097,9 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   function cortesPorSeccion() {
     return [
       'CDC: ' + mesLargo(ultimo(D.cdc.meses)) + ' · DIPLAP',
-      'Presupuesto: ' + mesLargo(D.presupuesto.corte) + ' · Panel Presupuestario',
+      'Presupuesto: ' + fecha(D.presupuestoSeremi.corte) + ' · Panel Presupuestario, página 7',
       'Bienes: ' + mesLargo(D.gestion.mes_parcial) + ' · Panel-Autoridades',
-      'Regularización: ' + mesLargo(ultimo(D.dcpr.meses)) + ' · Panel de Gestión Mensual DCPR',
+      'Regularización: ' + corteDcpr() + ' · Panel de Gestión Mensual DCPR',
       'Convenios: ' + (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte') + ' · Base_Convenios.xlsx (U. Convenios)',
       'Catastro: sin fuente real, datos de ejemplo',
       'Gobierno en terreno: sin fuente real, datos de ejemplo',
@@ -1075,7 +1147,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     var rs = regiones();
     var c = AGG.cdc(D, filtro.r), ec = AGG.estadoCumpl(c.global);
     var dc = AGG.dcpr(D, filtro.r);
-    var pr = AGG.presupuesto(D, filtro.r);
+    // Con suministros, la vista por defecto de la fuente y de la página.
+    var pr = AGG.presupuestoSeremi(D, filtro.r, 'con_suministros');
     var cod = filtro.r === null ? null : D.regiones[filtro.r].codigo;
 
     var ges = AGG.bienes(D, { region: cod, tramites: null });
@@ -1102,8 +1175,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     var tarjetas = [
       ['bandera', 'Cumplimiento CDC', COLOR[ec], pct(c.global),
        '<div class="kpi-pie">' + ESTADO[ec].rot + ' · a ' + mesLargo(ultimo(D.cdc.meses)) + ', DIPLAP</div>'],
-      ['moneda', 'Ejecución presupuestaria CDC', '', pct(pr.pct),
-       '<div class="kpi-pie">Corte ' + mesLargo(D.presupuesto.corte) + ', Panel Presupuestario</div>'],
+      ['moneda', 'Ejecución presupuestaria', '', pct(pr.pct),
+       '<div class="kpi-pie">Corte ' + fecha(D.presupuestoSeremi.corte) + ', con suministros, Panel Presupuestario</div>'],
       ['reloj', 'Rezago de Bienes', '', rezagoAct === null ? '—' : num(rezagoAct),
        '<div class="kpi-pie kpi-pie--texto">' + textoRezago + '</div>'],
       ['documento', 'Títulos entregados en 2026', '', num(dc.titulos.actual),
@@ -1149,10 +1222,9 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // que lleva el clic en el encabezado o en una celda.
   var MATRIZ_DIMS = [
     { rot: 'CDC', pag: 'cdc', estado: function (r) { return SEM[r].celdas.cdc; } },
-    { rot: 'Presupuesto', pag: 'presupuesto', estado: function (r) {
-        var f = D.presupuesto.filas[r];
-        return f.pct >= f.meta ? 'bueno' : 'alerta';
-      } },
+    // Sin meta en la fuente desde que el CDC por SEREMI dejó de publicarse
+    // (15-10-2026): informativa, como Convenios.
+    { rot: 'Presupuesto', pag: 'presupuesto', info: true },
     { rot: 'Bienes', pag: 'gestion', estado: function (r) { return SEM[r].celdas.gestion; } },
     { rot: 'Regularización', pag: 'dcpr', estado: function (r) { return SEM[r].celdas.dcpr; } },
     { rot: 'Convenios', pag: 'convenios', info: true },
@@ -1638,8 +1710,10 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     // de la matriz sigue viviendo acá, sin cambios); las otras cinco son del
     // sub-panel «Flujos», un dataset aparte sin relación con el semáforo.
     function anioDe(k) { return k ? k.slice(0, 4) : null; }
+    // Cada tarjeta de «Flujos» dice su mes: puede ir atrás del corte de la
+    // página (ver corteDcpr).
     function piePeriodo(corte, corteAnt, medida) {
-      return '<div class="kpi-pie">' + (corteAnt
+      return '<div class="kpi-pie">A ' + mesLargo(corte) + ' · ' + (corteAnt
         ? 'vs. mismo periodo ' + anioDe(corteAnt) + ': ' + celdaVar(medida.variacion)
         : 'sin dato de ' + (anioDe(corte) - 1) + ' con qué comparar') + '</div>';
     }
@@ -1661,7 +1735,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       ['cerrar', 'Resoluciones negativas (A+B+C) ' + anioDe(g.corteResol), num(y.negativas.actual),
        piePeriodo(g.corteResol, g.corteResolAnterior, y.negativas), '--error-darken-3'],
       ['reloj', 'Casos en proceso', num(y.proceso.actual),
-       '<div class="kpi-pie">' + (g.corteProcesoAnterior
+       '<div class="kpi-pie">A ' + mesLargo(g.corteProceso) + ' · ' + (g.corteProcesoAnterior
          ? 'vs. ' + mesLargo(g.corteProcesoAnterior) + ': ' + celdaVar(y.proceso.variacion)
          : 'sin dato de ' + (anioDe(g.corteProceso) - 1) + ' con qué comparar') + '</div>', '--chart-estado-alerta'],
       ['bandera', 'Casos ingresados al CBR ' + anioDe(g.corteCbr), num(y.cbr.actual),
@@ -1834,38 +1908,111 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   }
 
   // -------------------------------------------------------------- presupuesto
-  // Sin serie mensual (§ arriba en agregar.js): un solo corte, sin variación.
+  // Donut de subtítulos: sigue a la vista (con/sin suministros) y al filtro
+  // de SEREMI, igual que las barras. Arranca a las 12 y avanza en sentido
+  // horario en el orden del catálogo (21, 22, 24, 29), igual que la tabla de
+  // al lado: la posición también dice qué segmento es, no solo el color
+  // (púrpura ST21 y azul ST24 no se separan bien con deuteranopía, pero en el
+  // anillo no se tocan).
+  var COLOR_ST = ['--chart-1', '--chart-2', '--chart-3', '--chart-4', '--chart-5', '--chart-6', '--chart-7', '--chart-8'];
+  function arcoDonut(ro, ri, a0, a1) {
+    // Ángulos en radianes desde las 12, horario. El hueco de 2 px entre
+    // segmentos se descuenta en ángulo distinto afuera y adentro para que el
+    // corte quede paralelo; un segmento más chico que el hueco no se dibuja.
+    var g = 1.1, o0 = a0 + g / ro, o1 = a1 - g / ro, i0 = a0 + g / ri, i1 = a1 - g / ri;
+    if (o1 <= o0) return '';
+    if (i1 < i0) i0 = i1 = (a0 + a1) / 2;
+    var p = function (r, a) { return (100 + r * Math.sin(a)).toFixed(2) + ',' + (100 - r * Math.cos(a)).toFixed(2); };
+    return 'M' + p(ro, o0) + 'A' + ro + ',' + ro + ' 0 ' + (o1 - o0 > Math.PI ? 1 : 0) + ' 1 ' + p(ro, o1) +
+      'L' + p(ri, i1) + 'A' + ri + ',' + ri + ' 0 ' + (i1 - i0 > Math.PI ? 1 : 0) + ' 0 ' + p(ri, i0) + 'Z';
+  }
+  function pintarDonutSubtitulos(x) {
+    var st = x.porSubtitulo, a = 0, segs = [];
+    st.forEach(function (s, k) {
+      var ang = (s.share || 0) * 2 * Math.PI;
+      var d = s.budget > 0 ? arcoDonut(92, 62, a, a + ang) : '';
+      if (d) {
+        segs.push('<path class="dn-seg" data-k="' + k + '" d="' + d + '" style="fill:var(' + COLOR_ST[k] + ')"><title>ST' +
+          s.codigo + ' · ' + esc(s.nombre) + ': ' + pct(s.share) + ' del presupuesto, ' + money(s.budget) + '</title></path>');
+      }
+      a += ang;
+    });
+    var lectura = st.map(function (s) { return 'ST' + s.codigo + ' ' + pct(s.share); }).join(', ');
+    $('pr-st-donut').innerHTML = '<svg viewBox="0 0 200 200" role="img" aria-label="Distribución del presupuesto por subtítulo: ' +
+      lectura + '. Los valores están en la tabla de al lado.">' + segs.join('') +
+      '<text class="dn-cen-num" x="100" y="102" text-anchor="middle" font-size="19">' + num(x.budget) + '</text>' +
+      '<text class="dn-cen-rot" x="100" y="120" text-anchor="middle" font-size="11">M$ presupuesto</text></svg>';
+    var filasLey = st.map(function (s, k) {
+      return '<tr data-k="' + k + '"><td><i class="dn-sw" style="background:var(' + COLOR_ST[k] + ')"></i>ST' + s.codigo + ' · ' +
+        esc(s.nombre) + '</td><td><b>' + pct(s.share) + '</b></td><td>' + money(s.budget) + '</td><td>' + money(s.dev) +
+        '</td><td>' + pct(s.pct) + '</td></tr>';
+    }).join('');
+    $('pr-st-ley').innerHTML = '<table><thead><tr><th scope="col">Subtítulo</th><th scope="col">Participación</th>' +
+      '<th scope="col">Presupuesto</th><th scope="col">Devengado</th><th scope="col">Ejecución</th></tr></thead><tbody>' + filasLey +
+      '</tbody><tfoot><tr><td>Total</td><td>100,0 %</td><td>' + money(x.budget) + '</td><td>' + money(x.dev) + '</td><td>' +
+      pct(x.pct) + '</td></tr></tfoot></table>';
+  }
+
+  // Página 7 del Panel Presupuestario. Las 16 siempre a la vista; con una
+  // SEREMI elegida, las demás retroceden (mismo énfasis que las barras del
+  // CDC). Tres controles, como en la fuente: vista (con/sin suministros),
+  // subtítulo (filtro de la barra superior, o clic en el donut) y orden. El
+  // tope es el mayor presupuesto de lo que se muestra, para que el largo
+  // compare SEREMIs en la misma escala.
+  var vistaPresupuesto = 'con_suministros';
+  var subtituloPresupuesto = null;          // índice en D.presupuestoSeremi.subtitulos, o null = todos
+  var ordenPresupuesto = 'territorial';     // 'territorial' | 'dev' | 'pct'
+  var ORDEN_PRESUPUESTO = { territorial: 'de norte a sur', dev: 'por mayor devengado', pct: 'por mayor ejecución' };
+  function nombreSubtitulo(k) {
+    var s = D.presupuestoSeremi.subtitulos[k];
+    return 'ST' + s.codigo + ' · ' + s.nombre;
+  }
   function pintarPresupuesto() {
-    var x = AGG.presupuesto(D, filtro.r), corte = mesLargo(D.presupuesto.corte);
-    // Las tres comparten el modificador --money: si el % quedara al tamaño
-    // grande de las demás tarjetas del panel, al lado de cifras en pesos más
-    // chicas por ancho de tarjeta (§ CSS), la fila se ve descompensada.
-    var pie = '<div class="kpi-pie">Corte ' + corte + '</div>';
-    var tarjetas = [
-      ['moneda', 'Presupuesto vigente CDC', '', money(x.budget), pie, true],
-      ['moneda', 'Devengado CDC', '', money(x.dev), pie, true],
-      ['bandera', '% de ejecución', '', pct(x.pct), pie, true]
-    ];
-    $('pr-kpis').innerHTML = tarjetas.map(function (t) {
-      var c = t[2] ? ' kpi-rot--' + t[2] : '';
-      var n = (t[2] ? ' kpi-num--' + t[2] : '') + (t[5] ? ' kpi-num--money' : '');
-      return '<div class="tarjeta kpi"><div class="kpi-rot' + c + '">' + ico(t[0], 'ico--22') + t[1] + '</div>' +
-        '<div class="kpi-num' + n + '">' + t[3] + '</div>' + t[4] + '</div>';
+    var ps = D.presupuestoSeremi, x = AGG.presupuestoSeremi(D, filtro.r, vistaPresupuesto);
+    var k = subtituloPresupuesto;
+    Array.prototype.forEach.call($('pr-sg-vista').querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-vista') === vistaPresupuesto));
+    });
+    Array.prototype.forEach.call($('pr-sg-orden').querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-orden') === ordenPresupuesto));
+    });
+    $('f-subtitulo').value = k === null ? '' : String(k);
+
+    // Las cifras del texto son del subtítulo elegido, si lo hay.
+    var t = k === null ? x : { budget: x.porSubtitulo[k].budget, dev: x.porSubtitulo[k].dev,
+                                pct: x.porSubtitulo[k].pct, saldo: x.porSubtitulo[k].budget - x.porSubtitulo[k].dev };
+    $('pr-sg-sub').textContent = seremiNombre() + (k === null ? '' : ', ' + nombreSubtitulo(k)) +
+      ': presupuesto ' + money(t.budget) + ', devengado ' + money(t.dev) +
+      ', ejecución ' + pct(t.pct) + ', saldo por devengar ' + money(t.saldo) + '. Corte ' + fecha(ps.corte) +
+      (vistaPresupuesto === 'con_suministros' ? ', con' : ', sin') + ' contratos de suministro. ' +
+      'Alcance: ST21 solo comisiones de servicio, ST22, ST24 sin gastos en personal y ST29. ' +
+      'Fuente: Panel Presupuestario MBN, página 7, que lo declara sujeto a conciliación.';
+    pintarDonutSubtitulos(x);
+    focoSubtitulo(null);
+
+    $('pr-sg-tit').textContent = 'Por SEREMI' + (k === null ? '' : ' · ' + nombreSubtitulo(k)) +
+      ', ' + ORDEN_PRESUPUESTO[ordenPresupuesto];
+    var filas = AGG.presupuestoRegiones(D, vistaPresupuesto, k, ordenPresupuesto);
+    var tope = Math.max.apply(null, filas.map(function (f) { return f.budget; })) || 1;
+    $('pr-sg').classList.toggle('con-sel', filtro.r !== null);
+    $('pr-sg').innerHTML = filas.map(function (f) {
+      var nom = D.regiones[f.r].nombre;
+      return '<button type="button" class="barra-fila" data-r="' + f.r + '" aria-pressed="' + (filtro.r === f.r) + '" title="' +
+        esc(nom) + (k === null ? '' : ', ' + esc(nombreSubtitulo(k))) + ': presupuesto ' + money(f.budget) +
+        ', devengado ' + money(f.dev) + ', ejecución ' + pct(f.pct) + ', saldo por devengar ' + money(f.saldo) + '">' +
+        '<span class="barra-nom">' + esc(nom) + '</span>' +
+        '<span class="pista pista--sg"><span class="sg-ppto" style="width:' + (f.budget / tope * 100).toFixed(1) + '%">' +
+        '<span class="relleno" style="width:' + Math.min(100, (f.pct || 0) * 100).toFixed(1) + '%"></span></span></span>' +
+        '<span class="barra-val">' + pct(f.pct) + '<small>' + money(f.budget) + '</small></span></button>';
     }).join('');
 
-    $('pr-tabla-sub').textContent = 'Convenio de Desempeño Colectivo: presupuesto vigente y devengado a ' + corte +
-      '. Fuente: Panel Presupuestario MBN, Departamento de Presupuesto.';
-    var filas = regiones().map(function (r) {
-      var f = D.presupuesto.filas[r], cumple = f.pct >= f.meta;
-      return [esc(D.regiones[r].nombre), money(f.presupuesto), money(f.devengado), pct(f.pct), pct(f.meta),
-              sem(cumple ? 'bueno' : 'alerta', cumple ? 'Cumple' : 'Bajo meta')];
+    // La tabla sigue el mismo orden que las barras.
+    var tabla = filas.filter(function (f) { return filtro.r === null || f.r === filtro.r; }).map(function (f) {
+      return [D.regiones[f.r].nombre, money(f.budget), money(f.dev), pct(f.pct), money(f.saldo)];
     });
-    if (filtro.r === null) {
-      filas.push(['<b>Total general</b>', money(x.budget), money(x.dev), pct(x.pct), '',
-                  sem(x.enMeta === x.total ? 'bueno' : 'alerta', x.enMeta + '/' + x.total + ' en meta')]);
-    }
-    $('pr-tabla').innerHTML = tablaHtml(
-      ['SEREMI', 'Presupuesto vigente', 'Devengado', '% ejecución', 'Meta', 'Estado'], filas, true);
+    if (filtro.r === null) tabla.push(['Total 16 SEREMIs', money(t.budget), money(t.dev), pct(t.pct), money(t.saldo)]);
+    tablaDe($('pr-sg-tabla'), 'Ver tabla de datos',
+      ['SEREMI', 'Presupuesto', 'Devengado', 'Ejecución', 'Saldo por devengar'], tabla);
   }
 
   // ------------------------------------------------------- Gestión de Convenios
@@ -2044,6 +2191,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     // El combo de Materia solo sirve en Gestión de Convenios, mismo patrón.
     $('mat-filtro').hidden = pagina !== 'convenios';
     if (pagina !== 'convenios') $('mat-filtro').removeAttribute('open');
+    // Y el de Subtítulo, solo en Presupuesto.
+    $('pr-st-filtro').hidden = pagina !== 'presupuesto';
     pintarSello();
     pintarAviso();
     guardarUrl();
@@ -2135,8 +2284,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
      'Trámites de Panel-Autoridades: ' + D.gestion.tramites.map(function (t) { return t.nombre; }).join(', ') +
      '. «Ventas por Propuesta Pública» incluye Concesión por propuesta pública. Ingresados y finalizados son flujo del periodo (se suman); el stock es el saldo de casos abiertos (ingresados menos bajas), acumulado desde el inicio de la serie, no solo del año elegido. La comparación es siempre contra el mismo tramo del año anterior, nunca mes contra mes. El rezago es una cota, no un conteo exacto: casos que ya estaban en trámite al 31-12-2025 y que al corte siguen sin resolver, calculado como el stock a esa fecha menos las bajas posteriores (sin bajar de cero), suponiendo que las bajas cierran primero lo más antiguo. El semáforo de la matriz usa finalizados del año a la fecha contra el mismo tramo del año anterior, siempre con los trámites completos, sin importar el filtro de la página. Alerta bajo ' +
      dec(AGG.REGLAS.caidaMes * 100, 0) + ' % y crítico bajo ' + dec(AGG.REGLAS.caidaMesFuerte * 100, 0) + ' %.'],
-    ['Presupuesto CDC · % de ejecución',
-     'Presupuesto vigente, devengado y meta del Convenio de Desempeño Colectivo por SEREMI, del Panel Presupuestario del Departamento de Presupuesto. No es una de las cinco dimensiones del documento ni entra al semáforo: el panel publica solo el corte vigente (resultado final del mes), sin serie mensual, así que no hay variación contra el periodo anterior.'],
+    ['Presupuesto por SEREMI · ejecución y saldo por devengar',
+     'Página 7 del Panel Presupuestario del Departamento de Presupuesto: presupuesto vigente, devengado, ejecución (devengado ÷ presupuesto) y saldo por devengar (presupuesto − devengado) de cada SEREMI, en M$, al corte financiero que publica la fuente. Alcance: ST21 solo comisiones de servicio, ST22, ST24 sin gastos en personal y ST29. Dos vistas, como en la fuente: con y sin contratos de suministro. La ejecución de un total sale de las sumas, no del promedio de las regiones. Sin serie mensual ni meta: no entra al semáforo; en la matriz del Resumen va como informativa. La fuente declara estas cifras sujetas a conciliación.'],
     ['Gestión Regularización · títulos y solicitudes tramitadas',
      'Cifras acumuladas en el año según el Panel de Gestión Mensual del DCPR. Solicitudes tramitadas = positivas (ingreso al CBR) + negativas + enviadas a tribunales; las que siguen en proceso se informan aparte. La variación es lo que creció el acumulado desde el informe anterior. Alerta si el acumulado de tramitadas no creció, o si no se entregó ningún título teniendo títulos disponibles para entregar; crítico si pasan las dos. Las sumas por región cuadran con los totales que publica el DCPR: si no cuadran, el panel no se actualiza. «Títulos entregados» sigue esta misma fuente.'],
     ['Gestión Regularización · Ingresados',
@@ -2151,7 +2300,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     ['Mes y trimestre en curso',
      'Sus cifras están incompletas. Nunca entran en las comparaciones contra el periodo anterior y se informan por separado.'],
     ['Fuentes',
-     'CDC: Panel de Gestión Institucional 2026 de DIPLAP. Gestión Regularización: Panel de Gestión Mensual del DCPR (títulos y tramitadas de su fuente principal; ingresados, resoluciones, proceso y CBR de su sub-panel «Flujos»). Presupuesto CDC: Panel Presupuestario del Departamento de Presupuesto. Gestión de Bienes: Panel-Autoridades. Gestión de Convenios: Base_Convenios.xlsx (planilla de UPCG). Oficios, catastro y gobierno en terreno: planillas por crear (formato en plantillas/LEEME.md); hoy, datos de ejemplo.']
+     'CDC: Panel de Gestión Institucional 2026 de DIPLAP. Gestión Regularización: Panel de Gestión Mensual del DCPR (títulos y tramitadas de su fuente principal; ingresados, resoluciones, proceso y CBR de su sub-panel «Flujos»). Presupuesto por SEREMI: Panel Presupuestario del Departamento de Presupuesto (página 7). Gestión de Bienes: Panel-Autoridades. Gestión de Convenios: Base_Convenios.xlsx (planilla de UPCG). Oficios, catastro y gobierno en terreno: planillas por crear (formato en plantillas/LEEME.md); hoy, datos de ejemplo.']
   ];
   $('glo-lista').innerHTML = $('glo-imp').innerHTML = GLOSARIO.map(function (g) {
     return '<dt>' + esc(g[0]) + '</dt><dd>' + esc(g[1]) + '</dd>';
@@ -2250,6 +2399,53 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   $('f-seremi').value = filtro.r === null ? '' : String(filtro.r);
   construirFiltroGestion();
   construirFiltroMaterias();
+  // Pasar sobre un segmento o una fila de la tabla destaca los dos: el anillo
+  // y su leyenda se leen como una sola pieza. Sin cursor encima, queda
+  // destacado el subtítulo elegido en el filtro (si lo hay).
+  function focoSubtitulo(k) {
+    if (k === null && subtituloPresupuesto !== null) k = String(subtituloPresupuesto);
+    var caja = $('pr-st');
+    caja.classList.toggle('con-foco', k !== null);
+    Array.prototype.forEach.call(caja.querySelectorAll('[data-k]'), function (el) {
+      el.classList.toggle('activo', k !== null && el.getAttribute('data-k') === k);
+    });
+  }
+  $('pr-st').addEventListener('mouseover', function (ev) {
+    var el = ev.target.closest('[data-k]');
+    focoSubtitulo(el ? el.getAttribute('data-k') : null);
+  });
+  $('pr-st').addEventListener('mouseleave', function () { focoSubtitulo(null); });
+  function elegirSubtitulo(k) {
+    subtituloPresupuesto = k;
+    pintarPresupuesto();
+    focoSubtitulo(null);
+  }
+  // Clic en un segmento o una fila: filtra las barras por ese subtítulo; un
+  // segundo clic sobre el mismo vuelve a todos (como una SEREMI en el mapa).
+  $('pr-st').addEventListener('click', function (ev) {
+    var el = ev.target.closest('[data-k]');
+    if (!el) return;
+    var k = +el.getAttribute('data-k');
+    elegirSubtitulo(subtituloPresupuesto === k ? null : k);
+  });
+  $('f-subtitulo').innerHTML = '<option value="">Todos</option>' + D.presupuestoSeremi.subtitulos.map(function (st, k) {
+    return '<option value="' + k + '">' + esc(nombreSubtitulo(k)) + '</option>';
+  }).join('');
+  $('f-subtitulo').addEventListener('change', function () {
+    elegirSubtitulo(this.value === '' ? null : +this.value);
+  });
+  $('pr-sg-orden').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-orden]');
+    if (!b) return;
+    ordenPresupuesto = b.getAttribute('data-orden');
+    pintarPresupuesto();
+  });
+  $('pr-sg-vista').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-vista]');
+    if (!b) return;
+    vistaPresupuesto = b.getAttribute('data-vista');
+    pintarPresupuesto();
+  });
   $('dc-var').addEventListener('click', function (ev) {
     var b = ev.target.closest('button[data-var]');
     if (!b) return;

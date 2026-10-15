@@ -1,0 +1,25 @@
+# Credenciales. Nunca se versionan.
+.env
+datos.js.tmp
+datos/*.tmp
+__pycache__/
+
+# Material de consulta y salidas de auditoría: no se publican.
+legado/
+_design/
+_estandar/
+_referencia/
+*.xlsx
+logs/
+
+# Copias locales de paneles de otras unidades. El del DCPR trae nombre y
+# RUT de solicitantes: nunca se versiona ni se publica desde aquí.
+otros_informacion/
+
+# Documento de mandato del Gabinete: no lo necesita el panel para funcionar.
+Sistema_Seguimiento_SEREMIs.docx
+
+# Las plantillas de captura EN BLANCO sí se versionan: son el formato, sin
+# datos. Las llenas viven en la carpeta compartida de OneDrive, nunca aquí.
+!plantillas/oficios.xlsx
+!plantillas/gobierno_en_terreno.xlsx

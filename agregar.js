@@ -288,21 +288,46 @@
     return v < REGLAS.caidaMesFuerte ? 'critico' : v < REGLAS.caidaMes ? 'alerta' : 'bueno';
   }
 
-  // ---------------------------------------------------------- presupuesto CDC
-  // Sección aparte, fuera de las cinco dimensiones del documento y del
-  // semáforo: el Panel Presupuestario solo publica el corte vigente, sin
-  // serie mensual, así que aquí no hay variación contra el periodo anterior
-  // ni estado de alerta que acordar con Gabinete. Con r null suma las 16.
-  function presupuesto(D, r) {
+  // ------------------------------------------------- presupuesto por SEREMI
+  // Página 7 del Panel Presupuestario: todo el gasto regional (ST21
+  // comisiones, ST22, ST24, ST29), no solo el CDC. Corte único, sin serie ni
+  // semáforo: la fuente publica solo el corte vigente. `vista`: 'con_suministros' |
+  // 'sin_suministros'. Saldo y ejecución se calculan de las sumas, como en la
+  // fuente: la ejecución de un total no es el promedio de las ejecuciones.
+  function presupuestoSeremi(D, r, vista) {
     var todas = r === null || r === undefined;
-    var filas = D.presupuesto.filas.filter(function (f) { return todas || f.r === r; });
-    var budget = filas.reduce(function (a, f) { return a + f.presupuesto; }, 0);
-    var dev = filas.reduce(function (a, f) { return a + f.devengado; }, 0);
-    var enMeta = filas.filter(function (f) { return f.pct >= f.meta; }).length;
-    return {
-      budget: budget, dev: dev, pct: budget ? dev / budget : null,
-      enMeta: enMeta, total: filas.length, filas: filas
-    };
+    var filas = D.presupuestoSeremi.vistas[vista].filter(function (f) { return todas || f.r === r; });
+    var budget = filas.reduce(function (a, f) { return a + f.budget; }, 0);
+    var dev = filas.reduce(function (a, f) { return a + f.dev; }, 0);
+    // Distribución por subtítulo, en el orden fijo del catálogo (21, 22, 24,
+    // 29), no por tamaño: el color del donut sigue al subtítulo.
+    var porSubtitulo = D.presupuestoSeremi.subtitulos.map(function (s, k) {
+      var b = 0, d = 0;
+      filas.forEach(function (f) { b += f.sub[k][0]; d += f.sub[k][1]; });
+      return { codigo: s.codigo, nombre: s.nombre, budget: b, dev: d,
+               pct: b ? d / b : null, share: budget ? b / budget : null };
+    });
+    return { budget: budget, dev: dev, saldo: budget - dev, pct: budget ? dev / budget : null,
+             filas: filas, porSubtitulo: porSubtitulo };
+  }
+
+  // Las 16 SEREMIs para el gráfico de barras: todos los subtítulos (k null)
+  // o uno solo (k = índice en D.presupuestoSeremi.subtitulos), en el orden
+  // pedido, con las mismas opciones que la fuente: 'territorial' (norte a
+  // sur), 'dev' (mayor devengado) o 'pct' (mayor ejecución). Empate: norte a
+  // sur. Una SEREMI sin presupuesto en ese subtítulo no tiene ejecución
+  // (null, no 0 %) y va al final al ordenar por ejecución.
+  function presupuestoRegiones(D, vista, k, orden) {
+    var filas = D.presupuestoSeremi.vistas[vista].map(function (f) {
+      var b = k === null || k === undefined ? f.budget : f.sub[k][0];
+      var d = k === null || k === undefined ? f.dev : f.sub[k][1];
+      return { r: f.r, budget: b, dev: d, saldo: b - d, pct: b ? d / b : null };
+    });
+    if (orden === 'dev' || orden === 'pct') {
+      var clave = function (f) { return f[orden] === null ? -Infinity : f[orden]; };
+      filas.sort(function (a, b) { return clave(b) - clave(a) || a.r - b.r; });
+    }
+    return filas;
   }
 
   // --------------------------------------------------------- gestión de Convenios
@@ -577,7 +602,8 @@
     REGLAS: REGLAS, dia: dia, mediana: mediana, variacion: variacion,
     cdc: cdc, estadoCumpl: estadoCumpl, oficios: oficios, catastro: catastro,
     participacion: participacion, bienes: bienes, dcpr: dcpr, terreno: terreno,
-    presupuesto: presupuesto, regularizacion: regularizacion, convenios: convenios,
+    presupuestoSeremi: presupuestoSeremi, presupuestoRegiones: presupuestoRegiones,
+    regularizacion: regularizacion, convenios: convenios,
     semaforo: semaforo, alertas: alertas, cortes: cortes
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
