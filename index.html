@@ -341,6 +341,12 @@ button.barra-fila:hover{background:var(--gris-5)}
 /* Las columnas de texto se alinean a la izquierda; las de cifras, a la derecha
    (por defecto), que es donde se comparan los dígitos. */
 .tabla .izq,.datos .izq{text-align:left}
+/* Cifras, fechas y porcentajes nunca se parten («47,0» arriba y «%» abajo);
+   solo el texto (.izq) hace salto de línea. */
+.datos td:not(.izq){white-space:nowrap}
+/* CDC junto al gráfico: el indicador y el análisis de causa son texto largo;
+   con un mínimo cada uno, el indicador no queda en cinco líneas. */
+#cdc-detalle td.izq{min-width:13rem}
 .tabla tbody tr:nth-child(even),.datos tbody tr:nth-child(even){background:var(--gris-5)}
 .datos{overflow:auto; flex:1; min-height:0}
 .celda-var{display:inline-flex; align-items:center; gap:0.25rem; justify-content:flex-end; white-space:nowrap}
@@ -543,7 +549,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   .sem{position:relative}
   /* Cifras y fechas en una línea: «13-06-2022» partida en tres no se lee.
      Solo el texto (.izq) hace salto; la tabla se desplaza hacia el lado. */
-  .datos td:not(.izq),.datos th:not(.izq){white-space:nowrap}
+  .datos th:not(.izq){white-space:nowrap}
   .sem-rot{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 }
 @media (pointer:coarse){
@@ -715,7 +721,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 
       <!-- ------------------------------------------------ Cumplimiento CDC -->
       <section class="pagina" id="p-cdc" aria-label="Cumplimiento CDC" hidden>
-        <div class="tarjeta col ancho" data-sec="cdc-barras">
+        <div class="fila fila--toda fila--2-3">
+        <div class="tarjeta col angosto" data-sec="cdc-barras">
           <div class="t-cab">
             <h2 id="cdc-tit">Cumplimiento global por SEREMI</h2>
             <div class="leyenda" aria-hidden="true">
@@ -726,10 +733,11 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
           <div class="barras" id="cdc-barras"></div>
           <details class="tabla" id="cdc-tabla" data-sec="cdc-tabla"></details>
         </div>
-        <div class="tarjeta col" data-sec="cdc-detalle">
+        <div class="tarjeta col ancho" data-sec="cdc-detalle">
           <div class="t-cab"><h2 id="cdc-det-tit">Indicadores bajo 90 %</h2></div>
           <p class="t-sub" id="cdc-det-sub"></p>
-          <div class="datos datos--alto" id="cdc-detalle"></div>
+          <div class="datos datos--alto ajusta" id="cdc-detalle"></div>
+        </div>
         </div>
       </section>
 
@@ -1395,7 +1403,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // Barras del cumplimiento global, una por SEREMI, de norte a sur. Una sola
   // serie: todas en azul institucional; el estado va con ícono y etiqueta al
   // lado de la cifra. La marca punteada es el umbral de 90 %. Al hacer clic en
-  // una SEREMI se filtra el panel y abajo quedan sus indicadores bajo 90 %.
+  // una SEREMI se filtra el panel y al lado quedan sus indicadores bajo 90 %.
   function pintarCdc() {
     var mes = mesLargo(ultimo(D.cdc.meses)), umbral = pct(AGG.REGLAS.cdcAlerta, 0);
     var filas = D.regiones.map(function (reg, r) {
@@ -1404,7 +1412,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     });
     var tope = Math.max(1.1, Math.max.apply(null, filas.map(function (f) { return f.v || 0; })));
     $('cdc-tit').textContent = 'Cumplimiento global por SEREMI · ' + mes;
-    $('cdc-sub').textContent = 'Mismo cálculo que el panel de DIPLAP. Haz clic en una SEREMI para ver abajo sus indicadores bajo ' + umbral + '.';
+    $('cdc-sub').textContent = 'Mismo cálculo que el panel de DIPLAP. Haz clic en una SEREMI para ver al lado sus indicadores bajo ' + umbral + '.';
     $('cdc-barras').classList.toggle('con-sel', filtro.r !== null);
     $('cdc-barras').innerHTML = filas.map(function (f) {
       return '<button type="button" class="barra-fila" data-r="' + f.r + '" aria-pressed="' + (filtro.r === f.r) + '" title="' +
