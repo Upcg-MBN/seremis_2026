@@ -649,7 +649,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       <button type="button" class="pag" data-pag="gestion" title="Gestión de Bienes"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="casa"></svg><span class="txt">Gestión de Bienes</span></button>
       <button type="button" class="pag" data-pag="dcpr" title="Gestión Regularización"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="documento"></svg><span class="txt">Gestión Regularización</span></button>
       <button type="button" class="pag" data-pag="convenios" title="Gestión de Convenios"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="personas"></svg><span class="txt">Gestión de Convenios</span></button>
-      <button type="button" class="pag" data-pag="terreno" title="Gobierno en terreno"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="pin"></svg><span class="txt">Gobierno en terreno</span></button>
       <button type="button" class="pag" data-pag="oficios" title="Respuesta a oficios"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="correo"></svg><span class="txt">Respuesta a oficios</span></button>
       <div class="menu-pie">
         <a href="https://lab-reportes.bienes.cl/" target="_top" title="Ir al Centro de Paneles"><svg class="ico ico--22" viewBox="0 0 24 24" aria-hidden="true" data-i="home"></svg><span class="txt">Centro de Paneles</span></a>
@@ -862,23 +861,11 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
            riel, su grupo del diálogo PDF y pintarCatastro() del commit
            anterior, y PUBLICAR_CATASTRO = True en extraer.py. -->
 
-      <!-- ------------------------------------------------- Gobierno en terreno -->
-      <section class="pagina" id="p-terreno" aria-label="Gobierno en terreno" hidden>
-        <div class="fila">
-          <div class="tarjeta col ancho" data-sec="ter-mapa">
-            <div class="t-cab"><h2>Salidas a terreno por región</h2></div>
-            <p class="t-sub" id="ter-sub"></p>
-            <div class="mapa-caja" id="mapa"></div>
-            <div class="escala" id="escala"></div>
-            <details class="tabla" id="ter-tabla" data-sec="ter-tabla"></details>
-          </div>
-          <div class="tarjeta col angosto" data-sec="ter-minutas">
-            <div class="t-cab"><h2 id="ter-min-tit">Minutas de la última quincena</h2></div>
-            <p class="t-sub" id="ter-min-sub"></p>
-            <div class="minutas" id="minutas"></div>
-          </div>
-        </div>
-      </section>
+      <!-- Gobierno en terreno: retirada el 10-11-2026 a pedido del usuario
+           (la planilla seguía vacía). Para volver, recuperar del commit
+           anterior esta sección (mapa, tabla y minutas), su botón, su grupo
+           del PDF, armarMapa(), pintarTerreno() y <script src="mapa.js">, y
+           PUBLICAR_TERRENO = True en extraer.py. mapa.js sigue en el repo. -->
 
       <!-- ----------------------------------------------- Respuesta a oficios -->
       <section class="pagina" id="p-oficios" aria-label="Respuesta a oficios" hidden>
@@ -956,11 +943,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         <label class="opcion"><input type="checkbox" name="sec" value="cv-tabla-ft" checked>Convenios FT</label>
         <label class="opcion"><input type="checkbox" name="sec" value="cv-tabla-tramite" checked>Convenios en trámite</label>
       </fieldset>
-      <fieldset><legend>Gobierno en terreno</legend>
-        <label class="opcion"><input type="checkbox" name="sec" value="ter-mapa">Mapa de salidas a terreno</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="ter-tabla">Tabla de salidas por región</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="ter-minutas">Minutas de la última quincena</label>
-      </fieldset>
       <fieldset><legend>Oficios</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="of-kpis">Indicadores de respuesta</label>
         <label class="opcion"><input type="checkbox" name="sec" value="of-barras">Días de respuesta por SEREMI</label>
@@ -980,7 +962,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 <div class="tip" id="tip" hidden></div>
 
 <script src="datos.js"></script>
-<script src="mapa.js"></script>
 <script src="agregar.js"></script>
 <script>
 (function () {
@@ -989,7 +970,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // Carga mensual (13-10-2026): un mes y unos días de margen. Pasado esto,
   // el panel avisa que la actualización del mes no se hizo.
   var DIAS_FRESCO = 35;
-  var D = window.DATOS, MAPA = window.MAPA;
+  var D = window.DATOS;
   var $ = function (id) { return document.getElementById(id); };
 
   // ---- íconos: trazos del UI Kit gob.cl, los mismos del Power BI ----
@@ -1139,13 +1120,20 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // CDC/DCPR que no cambiaba al moverse a Presupuesto, Gestión de Bienes o
   // Gestión de Convenios. Las tres páginas sin fuente real lo dicen explícito,
   // en vez de mostrar una fecha que no es de nadie.
+  // Gestión de Bienes sale de Seguimiento de Autorizaciones desde el
+  // 10-11-2026; Panel-Autoridades queda como respaldo (FUENTE_GESTION en
+  // extraer.py). El nombre y el enlace siguen al `origen` del bloque, para
+  // que la página nunca nombre una fuente distinta de la que trajo las cifras.
+  var FUENTE_BIENES = D.gestion.origen === 'autorizaciones'
+    ? { nombre: 'Seguimiento de Autorizaciones', url: 'https://autorizaciones-bbnn.vercel.app/' }
+    : { nombre: 'Panel-Autoridades', url: 'https://upcg-mbn.github.io/Panel-Autoridades/' };
   // Enlaces a los reportes de los que se extrae cada dimensión (mismas URL
-  // que URL_CDC, URL_PRESUPUESTO, URL_DCPR y la de Panel-Autoridades en
+  // que URL_CDC, URL_PRESUPUESTO, URL_DCPR y URL_AUTORIZACIONES en
   // extraer.py). Se abren en otra pestaña.
   var ENLACES = {
     cdc: 'https://upcg-mbn.github.io/panel_gestion_2026/',
     presupuesto: 'https://presupuestombn.github.io/panel-presupuestario-mbn/',
-    gestion: 'https://upcg-mbn.github.io/Panel-Autoridades/',
+    gestion: FUENTE_BIENES.url,
     dcpr: 'https://bienesnacionales.github.io/mbn-dcpr-reportes/'
   };
   function enlace(pag, texto) {
@@ -1158,16 +1146,12 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       case 'presupuesto':
         return 'Fuente: ' + enlace('presupuesto', 'Panel Presupuestario MBN, página 7 (Depto. de Presupuesto)') + ' · Corte: ' + esc(fecha(D.presupuestoSeremi.corte));
       case 'gestion':
-        return 'Fuente: ' + enlace('gestion', 'Panel-Autoridades') + ' · Corte: ' + esc(mesLargo(D.gestion.mes_parcial));
+        return 'Fuente: ' + enlace('gestion', FUENTE_BIENES.nombre) + ' · Corte: ' + esc(mesLargo(D.gestion.mes_parcial));
       case 'dcpr':
         return 'Fuente: ' + enlace('dcpr', 'Panel de Gestión Mensual DCPR') + ' · Corte: ' + esc(corteDcpr());
       case 'convenios':
         return 'Fuente: Base_Convenios.xlsx (U. Convenios) · Corte: ' +
           (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte en la planilla');
-      case 'terreno':
-        return esDemo('terreno')
-          ? 'Gobierno en terreno: la planilla todavía no tiene filas. Los datos de esta página son de ejemplo.'
-          : 'Fuente: gobierno_en_terreno.xlsx · Carga: ' + esc(fecha(D.hoy));
       case 'oficios':
         return esDemo('oficios')
           ? 'Respuesta a oficios: la planilla todavía no tiene filas. Los datos de esta página son de ejemplo.'
@@ -1183,37 +1167,19 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     return [
       'CDC: ' + mesLargo(ultimo(D.cdc.meses)) + ' · DIPLAP',
       'Presupuesto: ' + fecha(D.presupuestoSeremi.corte) + ' · Panel Presupuestario, página 7',
-      'Bienes: ' + mesLargo(D.gestion.mes_parcial) + ' · Panel-Autoridades',
+      'Bienes: ' + mesLargo(D.gestion.mes_parcial) + ' · ' + FUENTE_BIENES.nombre,
       'Regularización: ' + corteDcpr() + ' · Panel de Gestión Mensual DCPR',
       'Convenios: ' + (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte') + ' · Base_Convenios.xlsx (U. Convenios)',
-      'Gobierno en terreno: ' + (esDemo('terreno') ? 'sin filas en la planilla, datos de ejemplo' : 'carga ' + fecha(D.hoy) + ' · gobierno_en_terreno.xlsx'),
       'Oficios: ' + (esDemo('oficios') ? 'sin filas en la planilla, datos de ejemplo' : 'carga ' + fecha(D.hoy) + ' · oficios.xlsx')
     ].join('\n');
   }
 
-  // Todas las fuentes del panel, reales y de ejemplo, para el aviso de
-  // «datos mixtos» del Resumen — más completa que DIMENSIONES, que son solo
-  // las cinco del semáforo (Presupuesto y Convenios quedan fuera de él, pero
-  // igual son fuentes reales que hay que nombrar acá).
-  var FUENTES_TODAS = [
-    ['cdc', 'CDC'], ['presupuesto', 'Presupuesto'], ['gestion', 'Bienes'],
-    ['dcpr', 'Regularización'], ['convenios', 'Convenios'],
-    ['oficios', 'Oficios'], ['terreno', 'Gobierno en terreno']
-  ];
-  // «A, B, C y D», no «A y B y C y D».
-  function listaY(a) {
-    return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1];
-  }
-
   // Aviso de datos de ejemplo, según la página.
   function pintarAviso() {
-    var demo = FUENTES_TODAS.filter(function (d) { return esDemo(d[0]); }).map(function (d) { return d[1]; });
-    var reales = FUENTES_TODAS.filter(function (d) { return !esDemo(d[0]); }).map(function (d) { return d[1]; });
+    // Sin aviso de «datos mixtos» en el Resumen (retirado el 10-11-2026 a
+    // pedido del usuario): solo una página que en sí es de ejemplo lo dice.
     var txt = '';
-    if (pagina === 'resumen' && demo.length) {
-      txt = '<b>Datos mixtos.</b> ' + listaY(reales) + ' son cifras reales. ' + listaY(demo) +
-        ' todavía usan datos de ejemplo, inventados: no sirven para decidir nada.';
-    } else if (esDemo(pagina)) {
+    if (esDemo(pagina)) {
       txt = '<b>Datos de ejemplo.</b> Esta página todavía no tiene fuente real: las cifras son inventadas y sirven para revisar la estructura. No se usan para decidir nada.';
     }
     $('aviso-demo').hidden = !txt;
@@ -1276,7 +1242,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // semáforo y las alertas.
   var DIMENSIONES = [
     ['cdc', 'CDC'], ['oficios', 'Oficios'],
-    ['gestion', 'Bienes'], ['dcpr', 'DCPR'], ['terreno', 'Terreno']
+    ['gestion', 'Bienes'], ['dcpr', 'DCPR']
   ];
   function rotDim(rot) {
     var d = DIMENSIONES.filter(function (x) { return x[1] === rot; })[0];
@@ -1288,10 +1254,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // él; saca Oficios). Convenios no tiene umbral de alerta acordado (fuente
   // nueva): va con un ícono «informativo» en vez de un estado
   // bueno/alerta/crítico, para no sugerir una lectura de semáforo que no está
-  // definida. G. en terreno sí usa el semáforo real, pero también es dato de
-  // ejemplo: lleva la etiqueta igual, sin el ícono informativo (el estado SÍ
-  // está definido, solo que con datos inventados). `pag` es la página a la
-  // que lleva el clic en el encabezado o en una celda.
+  // definida. G. en terreno salió el 10-11-2026 con su página. `pag` es la
+  // página a la que lleva el clic en el encabezado o en una celda.
   var MATRIZ_DIMS = [
     { rot: 'CDC', pag: 'cdc', estado: function (r) { return SEM[r].celdas.cdc; } },
     // Sin meta en la fuente desde que el CDC por SEREMI dejó de publicarse
@@ -1299,8 +1263,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     { rot: 'Presupuesto', pag: 'presupuesto', info: true },
     { rot: 'Bienes', pag: 'gestion', estado: function (r) { return SEM[r].celdas.gestion; } },
     { rot: 'Regularización', pag: 'dcpr', estado: function (r) { return SEM[r].celdas.dcpr; } },
-    { rot: 'Convenios', pag: 'convenios', info: true },
-    { rot: 'G. en terreno', pag: 'terreno', estado: function (r) { return SEM[r].celdas.terreno; }, demo: esDemo('terreno') }
+    { rot: 'Convenios', pag: 'convenios', info: true }
   ];
   function celdaInfo() {
     return '<span class="sem" title="Informativo: sin umbral de alerta definido para esta dimensión.">' +
@@ -1551,7 +1514,10 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 
   // Aclaraciones de nombre que no caben en el nombre del trámite: se repiten
   // en el combo y en la tabla, chicas (<small>), para no competir con la cifra.
-  var NOTA_TRAMITE = { 'Ventas por Propuesta Pública': 'incluye Concesión por propuesta pública' };
+  // La nota de Ventas por Propuesta Pública era de Panel-Autoridades; en
+  // Seguimiento de Autorizaciones ese trámite viene solo.
+  var NOTA_TRAMITE = D.gestion.origen === 'autorizaciones' ? {}
+    : { 'Ventas por Propuesta Pública': 'incluye Concesión por propuesta pública' };
   function notaTramite(nombre) {
     var n = NOTA_TRAMITE[nombre];
     return n ? ' <small>(' + esc(n) + ')</small>' : '';
@@ -1675,7 +1641,8 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     // gesto que elegir una SEREMI en el mapa o en una barra.
     $('ges-tabla-tit').textContent = 'Detalle por trámite' + (filtro.r === null ? '' : ' · ' + D.regiones[filtro.r].nombre);
     $('ges-tabla-sub').textContent = 'Acumulado ' + x.anioActual + ' a ' + corte + ', comparado con el mismo periodo de ' +
-      x.anioAnterior + '. El stock es el saldo de casos abiertos (ingresados menos bajas), acumulado desde el inicio de la serie. ' +
+      x.anioAnterior + '. El stock es el saldo de casos abiertos (ingresados menos ' +
+      (D.gestion.origen === 'autorizaciones' ? 'finalizados' : 'bajas') + '), acumulado desde el inicio de la serie. ' +
       'El rezago es cuánto de lo que ya estaba en trámite al 31-12-2025 sigue sin resolver. Haz clic en un trámite para filtrarlo.';
     var soloUno = elegidos.length === 1;
     var filas = x.porTramite.map(function (t) {
@@ -1870,31 +1837,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       ['SEREMI', 'Abogados', 'Res. A', 'Res. B', 'Res. C', 'A + B + C'], filasEfi, true);
   }
 
-  // ------------------------------------------------------ gobierno en terreno
-  function armarMapa() {
-    var o = [];
-    MAPA.paneles.forEach(function (p) {
-      o.push('<text class="panel-rot" x="' + (p.x + 10) + '" y="30">' + p.nombre + '</text>');
-    });
-    Object.keys(MAPA.regiones).forEach(function (cod) {
-      if (cod === 'zsd') {
-        o.push('<path class="reg reg--fijo" d="' + MAPA.regiones[cod] + '"/>');
-        return;
-      }
-      o.push('<path class="reg" tabindex="0" role="button" aria-pressed="false" data-cod="' + cod +
-        '" fill-rule="evenodd" d="' + MAPA.regiones[cod] + '"/>');
-    });
-    $('mapa').innerHTML = '<svg viewBox="0 0 ' + MAPA.ancho + ' ' + MAPA.alto +
-      '" role="img" aria-label="Salidas a terreno por región. Los valores están en la tabla de datos.">' + o.join('') + '</svg>';
-
-    Array.prototype.forEach.call($('mapa').querySelectorAll('.reg:not(.reg--fijo)'), function (p) {
-      p.addEventListener('click', function () { elegirRegionPorCodigo(p.getAttribute('data-cod')); });
-      p.addEventListener('keydown', function (ev) {
-        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); elegirRegionPorCodigo(p.getAttribute('data-cod')); }
-      });
-    });
-  }
-
   function elegirRegionPorCodigo(cod) {
     var i = -1;
     D.regiones.forEach(function (r, k) { if (r.codigo === cod) i = k; });
@@ -1914,70 +1856,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     filtro.r = i;
     $('f-seremi').value = String(i);
     pintar();
-  }
-
-  // Cuatro clases, espaciadas en la rampa: con seis, los azules contiguos no se
-  // distinguían y cada clase tenía dos salidas de ancho.
-  var PASOS = ['--chart-seq-4', '--chart-seq-6', '--chart-seq-8', '--chart-seq-10'];
-
-  function pintarTerreno() {
-    var porRegion = D.regiones.map(function (_, r) { return AGG.terreno(D, r).salidas.length; });
-    var limites = AGG.cortes(porRegion, PASOS.length);
-    var minimo = Math.min.apply(null, porRegion.filter(function (v) { return v > 0; }).concat([Infinity]));
-    function clase(v) {
-      if (!v) return null;
-      for (var i = 0; i < limites.length; i++) if (v < limites[i]) return i;
-      return limites.length;
-    }
-    $('mapa').parentNode.classList.toggle('con-sel', filtro.r !== null);
-    Array.prototype.forEach.call($('mapa').querySelectorAll('.reg:not(.reg--fijo)'), function (p) {
-      var cod = p.getAttribute('data-cod'), i = -1;
-      D.regiones.forEach(function (r, k) { if (r.codigo === cod) i = k; });
-      var v = i < 0 ? 0 : porRegion[i];
-      var c = clase(v);
-      p.style.fill = c === null ? 'var(--gris-10)' : 'var(' + PASOS[c] + ')';
-      p.classList.toggle('sel', i === filtro.r);
-      p.setAttribute('aria-pressed', String(i === filtro.r));
-      p.setAttribute('aria-label', (i < 0 ? cod : D.regiones[i].nombre) + ': ' + num(v) + ' salidas a terreno');
-      p.innerHTML = '<title>' + esc(i < 0 ? cod : D.regiones[i].nombre) + ': ' + num(v) + ' salidas</title>';
-    });
-    // Tantas clases como cortes devolvió el algoritmo, no las que caben en la
-    // rampa: con pocos valores distintos cortes() devuelve menos límites.
-    var clases = [];
-    for (var ci = 0; ci <= limites.length; ci++) clases.push(ci);
-    $('escala').innerHTML = '<b>Salidas a terreno</b>' + clases.map(function (i) {
-      var desde = i === 0 ? minimo : limites[i - 1];
-      var hasta = i < limites.length ? limites[i] - 1 : null;
-      return '<span><i style="background:var(' + PASOS[i] + ')"></i>' + num(desde) + (hasta === null ? ' o más' : hasta > desde ? '–' + num(hasta) : '') + '</span>';
-    }).join('') + '<span><i style="background:var(--gris-10)"></i>Sin salidas registradas</span>';
-
-    var ter = AGG.terreno(D, filtro.r);
-    var quincena = D.terreno.quincenas[D.terreno.quincenas.length - 1];
-    $('ter-sub').textContent = seremiNombre() + ' · ' + num(ter.salidas.length) + ' salidas en ' +
-      D.terreno.quincenas.length + ' quincenas, desde ' + rotQuincena(D.terreno.quincenas[0]) +
-      '. Haz clic en una región para filtrar.';
-    tablaDe($('ter-tabla'), 'Ver tabla de datos', ['SEREMI', 'Salidas', 'Comunas distintas', 'Quincenas sin reportar'],
-      D.regiones.map(function (reg, r) {
-        var t = AGG.terreno(D, r);
-        return [reg.nombre, num(t.salidas.length), num(t.nComunas), num(t.sinReportar)];
-      }));
-
-    $('ter-min-tit').textContent = 'Minutas · ' + rotQuincena(quincena) + (ter.enCurso ? ' (en curso)' : '');
-    var quien = filtro.r === null ? 'el conjunto de SEREMIs' : D.regiones[filtro.r].nombre;
-    $('ter-min-sub').textContent = ter.ultima.length
-      ? ter.ultima.length + ' salida(s) reportada(s) en ' + quien + '.'
-      : 'Sin reporte de esta quincena en ' + quien + '.';
-    $('minutas').innerHTML = ter.ultima.length ? ter.ultima.map(function (s) {
-      return '<div class="minuta"><div class="minuta-cab"><b>' + esc(s.comuna) + '</b>' +
-        '<span>' + esc(D.regiones[s.r].nombre) + '</span></div>' +
-        '<p>' + esc(s.temas) + '</p><div class="etiquetas">' +
-        s.actores.map(function (a) { return '<span class="etiqueta">' + ico('personas', 'ico--16') + esc(a) + '</span>'; }).join('') +
-        '</div></div>';
-    }).join('') : '<p class="vacio">Esta quincena no tiene salidas reportadas.</p>';
-  }
-
-  function rotQuincena(q) {
-    return (q.slice(-1) === '1' ? '1ª' : '2ª') + ' quincena de ' + mesLargo(q.slice(0, 7));
   }
 
   // -------------------------------------------------------------- presupuesto
@@ -2243,7 +2121,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     pintarGestion();
     pintarDcpr();
     pintarConvenios();
-    pintarTerreno();
     pintarPresupuesto();
     pintarAviso();
     $('f-reset').hidden = filtro.r === null;
@@ -2361,8 +2238,10 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
      'Días entre el envío del Gabinete y la respuesta de la SEREMI. Los oficios sin respuesta cuentan su espera hasta hoy y no se descartan: dejarlos fuera esconde justamente a quien no contesta. No hay plazo estándar de respuesta; el panel marca alerta desde ' +
      AGG.REGLAS.oficioViejo + ' días de espera y crítico desde ' + AGG.REGLAS.oficioCritico + ', como regla operativa del seguimiento, no como incumplimiento.'],
     ['Gestión de Bienes · ingresados, finalizados, stock y rezago',
-     'Trámites de Panel-Autoridades: ' + D.gestion.tramites.map(function (t) { return t.nombre; }).join(', ') +
-     '. «Ventas por Propuesta Pública» incluye Concesión por propuesta pública. Ingresados y finalizados son flujo del periodo (se suman); el stock es el saldo de casos abiertos (ingresados menos bajas), acumulado desde el inicio de la serie, no solo del año elegido. La comparación es siempre contra el mismo tramo del año anterior, nunca mes contra mes. El rezago es una cota, no un conteo exacto: casos que ya estaban en trámite al 31-12-2025 y que al corte siguen sin resolver, calculado como el stock a esa fecha menos las bajas posteriores (sin bajar de cero), suponiendo que las bajas cierran primero lo más antiguo. El semáforo de la matriz usa finalizados del año a la fecha contra el mismo tramo del año anterior, siempre con los trámites completos, sin importar el filtro de la página. Alerta bajo ' +
+     'Trámites de ' + FUENTE_BIENES.nombre + ': ' + D.gestion.tramites.map(function (t) { return t.nombre; }).join(', ') +
+     (D.gestion.origen === 'autorizaciones'
+       ? '. Una fila por expediente, por la región del inmueble; un finalizado sin fecha de término sale en la fecha de su última actualización, como en la fuente. Ingresados y finalizados son flujo del periodo (se suman); el stock es el saldo de casos abiertos (ingresados menos finalizados), acumulado'
+       : '. «Ventas por Propuesta Pública» incluye Concesión por propuesta pública. Ingresados y finalizados son flujo del periodo (se suman); el stock es el saldo de casos abiertos (ingresados menos bajas), acumulado') + ' desde el inicio de la serie, no solo del año elegido. La comparación es siempre contra el mismo tramo del año anterior, nunca mes contra mes. El rezago es una cota, no un conteo exacto: casos que ya estaban en trámite al 31-12-2025 y que al corte siguen sin resolver, calculado como el stock a esa fecha menos las bajas posteriores (sin bajar de cero), suponiendo que las bajas cierran primero lo más antiguo. El semáforo de la matriz usa finalizados del año a la fecha contra el mismo tramo del año anterior, siempre con los trámites completos, sin importar el filtro de la página. Alerta bajo ' +
      dec(AGG.REGLAS.caidaMes * 100, 0) + ' % y crítico bajo ' + dec(AGG.REGLAS.caidaMesFuerte * 100, 0) + ' %.'],
     ['Presupuesto por SEREMI · ejecución y saldo por devengar',
      'Página 7 del Panel Presupuestario del Departamento de Presupuesto: presupuesto vigente, devengado, ejecución (devengado ÷ presupuesto) y saldo por devengar (presupuesto − devengado) de cada SEREMI, en M$, al corte financiero que publica la fuente. Alcance: ST21 solo comisiones de servicio, ST22, ST24 sin gastos en personal y ST29. Dos vistas, como en la fuente: con y sin contratos de suministro. La ejecución de un total sale de las sumas, no del promedio de las regiones. Sin serie mensual ni meta: no entra al semáforo; en la matriz del Resumen va como informativa. La fuente declara estas cifras sujetas a conciliación.'],
@@ -2374,13 +2253,10 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
      'Del sub-panel «Flujos» de esa misma página (un dataset aparte, sin relación con el de títulos, tramitadas e ingresados de arriba): resoluciones positivas y negativas (suma de los tipos A, B y C), casos en proceso y casos ingresados al CBR. Resoluciones y CBR son flujo del año a la fecha, comparado contra el mismo tramo del año anterior; casos en proceso es una foto al corte (el saldo de expedientes abiertos), comparada contra la misma foto del año anterior, no algo que se sume. El gráfico «Resoluciones por SEREMI» desglosa cada tipo (A, B y C: positivas más negativas), uno a la vez, con la marca del mismo mes del año anterior sobre cada barra; su tabla trae los tres juntos. Ninguna de estas cifras entra al semáforo ni a las alertas del Resumen.'],
     ['Gestión de Convenios · vigentes, monto y en trámite',
      'Base_Convenios.xlsx (planilla de UPCG, sincronizada por OneDrive; el enlace de SharePoint exige inicio de sesión institucional, así que no se lee por URL como las demás fuentes). Es una foto a la fecha de la planilla, sin serie mensual: no entra al semáforo ni a las alertas. La hoja «Convenios FT» guarda una foto por mes (columna «Fecha corte»): el panel usa solo la más reciente. «Convenios vigentes» y su monto salen de esa foto con Estado = Vigente; «Convenios en proceso» es el total de la hoja «En trámite» tras el filtro, desglosado por su columna ESTADO (En trámite, Detenido, Suscrito sin acto). La SEREMI sale de «Región/División» (Convenios FT) o de «RESPONSABLE MBN» (En trámite, buscando el nombre de la región dentro del texto: «Seremi Los Lagos», «DCPR - Seremi O\'Higgins»); las filas de alcance nacional (DIPLAP, GABSUB, DBN, DCPR, DICAT, SNIT y similares) no tienen SEREMI y se omiten, no es un error de captura. La Materia de «Convenios FT» es la que trae la propia planilla; la de «En trámite» se homologa por palabra clave a las mismas 4 categorías (Propiedad fiscal, Regularización, Mixto, Otro), porque su «MATERIA (referencial)» es texto libre.'],
-    ['Gobierno en terreno · quincenas sin reportar',
-     'Quincenas seguidas sin ninguna salida cargada, contadas desde la última hacia atrás. Alerta con una, crítico con más de ' +
-     AGG.REGLAS.quincenasSinReportar + '. Una quincena sin fila es una quincena sin reporte, no una quincena sin salidas.'],
     ['Mes y trimestre en curso',
      'Sus cifras están incompletas. Nunca entran en las comparaciones contra el periodo anterior y se informan por separado.'],
     ['Fuentes',
-     'CDC: Panel de Gestión Institucional 2026 de DIPLAP. Gestión Regularización: Panel de Gestión Mensual del DCPR (títulos y tramitadas de su fuente principal; ingresados, resoluciones, proceso y CBR de su sub-panel «Flujos»). Presupuesto por SEREMI: Panel Presupuestario del Departamento de Presupuesto (página 7). Gestión de Bienes: Panel-Autoridades. Gestión de Convenios: Base_Convenios.xlsx (planilla de UPCG). Oficios y gobierno en terreno: planillas oficios.xlsx y gobierno_en_terreno.xlsx, en la carpeta compartida de UPCG; mientras una no tenga filas, su página muestra datos de ejemplo rotulados así.']
+     'CDC: Panel de Gestión Institucional 2026 de DIPLAP. Gestión Regularización: Panel de Gestión Mensual del DCPR (títulos y tramitadas de su fuente principal; ingresados, resoluciones, proceso y CBR de su sub-panel «Flujos»). Presupuesto por SEREMI: Panel Presupuestario del Departamento de Presupuesto (página 7). Gestión de Bienes: ' + FUENTE_BIENES.nombre + ' (' + FUENTE_BIENES.url + '). Gestión de Convenios: Base_Convenios.xlsx (planilla de UPCG). Oficios: planilla oficios.xlsx, en la carpeta compartida de UPCG; mientras no tenga filas, su página muestra datos de ejemplo rotulados así.']
   ];
   $('glo-lista').innerHTML = $('glo-imp').innerHTML = GLOSARIO.map(function (g) {
     return '<dt>' + esc(g[0]) + '</dt><dd>' + esc(g[1]) + '</dd>';
@@ -2530,7 +2406,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     varResol = b.getAttribute('data-var');
     pintarDcpr();
   });
-  armarMapa();
   irA(document.querySelector('.pag[data-pag="' + vista[0] + '"]') ? vista[0] : 'resumen', false);
   pintar();
 })();

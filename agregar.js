@@ -521,12 +521,13 @@
       // Catastro es opcional: extraer.py no lo publica mientras no tenga
       // fuente real (10-11-2026), y sin bloque no entra al «peor estado».
       var fc = cdc(D, r), fo = oficios(D, r), fk = D.catastro ? catastro(D, r) : null;
-      var fg = bienes(D, { region: reg.codigo, tramites: null }), fd = dcpr(D, r), ft = terreno(D, r);
+      var fg = bienes(D, { region: reg.codigo, tramites: null }), fd = dcpr(D, r), ft = D.terreno ? terreno(D, r) : null;
       var celdas = {
         cdc: estadoCdc(fc), oficios: estadoOficios(fo),
         gestion: estadoGestion(fg),
-        dcpr: estadoDcpr(fd), terreno: estadoTerreno(ft)
+        dcpr: estadoDcpr(fd)
       };
+      if (ft) celdas.terreno = estadoTerreno(ft);
       if (fk) celdas.catastro = estadoCatastro(fk);
       var peorEstado = 'bueno';
       Object.keys(celdas).forEach(function (k) { peorEstado = peor(peorEstado, celdas[k]); });
@@ -581,7 +582,7 @@
                             ' % respecto al mismo periodo de ' + f.detalle.gestion.anioAnterior });
         }
       });
-      if (f.detalle.terreno.sinReportar) {
+      if (f.detalle.terreno && f.detalle.terreno.sinReportar) {
         out.push({ r: f.r, seremi: f.nombre, estado: f.celdas.terreno, dimension: 'Terreno',
                    texto: f.detalle.terreno.sinReportar + ' quincena(s) sin reportar gobierno en terreno' });
       }
