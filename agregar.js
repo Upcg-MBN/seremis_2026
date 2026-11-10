@@ -357,9 +357,17 @@
     var tramite = c.tramite.filter(pasa);
     var ftVigentes = ft.filter(function (x) { return x.vigente; });
     var montoVigentes = ftVigentes.reduce(function (a, x) { return a + (x.monto || 0); }, 0);
+    // Columna ESTADO de «En trámite» (noviembre 2026): cuántos hay en cada
+    // punto del proceso, en el orden en que aparecen en la planilla.
+    var porEstado = [];
+    tramite.forEach(function (x) {
+      var e = x.estado || 'Sin estado';
+      var hit = porEstado.filter(function (p) { return p.estado === e; })[0];
+      if (hit) hit.n++; else porEstado.push({ estado: e, n: 1 });
+    });
     return {
       corte: c.corte, materias: c.materias,
-      kpi: { vigentes: ftVigentes.length, monto: montoVigentes, tramite: tramite.length },
+      kpi: { vigentes: ftVigentes.length, monto: montoVigentes, tramite: tramite.length, porEstado: porEstado },
       ft: ft, ftVigentes: ftVigentes, tramite: tramite
     };
   }
@@ -510,13 +518,16 @@
   // ninguna sale de comparar SEREMIs entre sí.
   function semaforo(D) {
     return D.regiones.map(function (reg, r) {
-      var fc = cdc(D, r), fo = oficios(D, r), fk = catastro(D, r);
+      // Catastro es opcional: extraer.py no lo publica mientras no tenga
+      // fuente real (10-11-2026), y sin bloque no entra al «peor estado».
+      var fc = cdc(D, r), fo = oficios(D, r), fk = D.catastro ? catastro(D, r) : null;
       var fg = bienes(D, { region: reg.codigo, tramites: null }), fd = dcpr(D, r), ft = terreno(D, r);
       var celdas = {
         cdc: estadoCdc(fc), oficios: estadoOficios(fo),
-        catastro: estadoCatastro(fk), gestion: estadoGestion(fg),
+        gestion: estadoGestion(fg),
         dcpr: estadoDcpr(fd), terreno: estadoTerreno(ft)
       };
+      if (fk) celdas.catastro = estadoCatastro(fk);
       var peorEstado = 'bueno';
       Object.keys(celdas).forEach(function (k) { peorEstado = peor(peorEstado, celdas[k]); });
       return {
