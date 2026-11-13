@@ -597,7 +597,7 @@
   }
 
   // ------------------------------------------------------------------ mapa
-  // Cortes naturales de Fisher-Jenks, copiados de DASHBOARD SUBSE/agregar.js:
+  // Cortes naturales de Fisher-Jenks, copiados de Panel-Autoridades-fuente/agregar.js:
   // los quintiles dejan a la Metropolitana en la misma clase que regiones muy
   // menores. Con 16 valores el cálculo exacto es instantáneo.
   function cortes(valores, k) {
