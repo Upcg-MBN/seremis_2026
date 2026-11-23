@@ -115,7 +115,8 @@
       viejos: pend.filter(function (o) { return o.espera >= REGLAS.oficioViejo; }).length,
       dias: dias,
       mediana: mediana(dias),
-      esperaMaxima: pend.length ? pend[0].espera : 0
+      esperaMaxima: pend.length ? pend[0].espera : 0,
+      tasa: dias.length + pend.length ? dias.length / (dias.length + pend.length) : null
     };
   }
 
@@ -123,6 +124,69 @@
     if (o.esperaMaxima >= REGLAS.oficioCritico) return 'critico';
     if (o.viejos > 0) return 'alerta';
     return 'bueno';
+  }
+
+  // Desde el 23-11-2026 (fuente Sistema de Firma) el bloque trae la lista de
+  // oficios seguidos (`D.oficios.oficios`). Con pocos oficios por SEREMI la
+  // mediana sola es un dato disfrazado de patrón: la página muestra cada
+  // oficio (matriz), cada respuesta (puntos) y el ritmo de llegada.
+  function alertaEspera(dias) {
+    return dias >= REGLAS.oficioCritico ? 'critico' : dias >= REGLAS.oficioViejo ? 'alerta' : null;
+  }
+
+  function listaOficios(D) {
+    return (D.oficios.oficios || []).slice().sort(function (a, b) {
+      return a.envio < b.envio ? 1 : a.envio > b.envio ? -1 : (a.folio < b.folio ? 1 : -1);
+    });
+  }
+
+  function oficiosMatriz(D) {
+    var hoy = dia(D.hoy), lista = listaOficios(D), idx = {};
+    D.oficios.items.forEach(function (i) { idx[i.folio + '|' + i.r] = i; });
+    return {
+      oficios: lista.map(function (o) { return { folio: o.folio, materia: o.materia, envio: o.envio }; }),
+      filas: D.regiones.map(function (_, r) {
+        return { r: r, celdas: lista.map(function (o) {
+          var i = idx[o.folio + '|' + r];
+          if (!i) return null;
+          if (i.respuesta) {
+            return { estado: 'resp', dias: dia(i.respuesta) - dia(i.envio), alerta: null,
+                     nroResp: i.nroResp || null, via: i.via || null, respuesta: i.respuesta };
+          }
+          var d = hoy - dia(i.envio);
+          return { estado: 'pend', dias: d, alerta: alertaEspera(d), nroResp: null, via: null, respuesta: null };
+        }) };
+      })
+    };
+  }
+
+  function oficiosPuntos(D) {
+    var hoy = dia(D.hoy);
+    return D.regiones.map(function (_, r) {
+      var resp = [], pend = [];
+      D.oficios.items.forEach(function (i) {
+        if (i.r !== r) return;
+        if (i.respuesta) resp.push(dia(i.respuesta) - dia(i.envio));
+        else pend.push(hoy - dia(i.envio));
+      });
+      return { r: r, resp: resp, pend: pend, mediana: resp.length >= 3 ? mediana(resp) : null };
+    });
+  }
+
+  // % acumulado de las SEREMIs destinatarias que ya respondió, por días desde
+  // el envío: un escalón por cada día con respuestas, partiendo en (0, 0).
+  function oficiosRitmo(D) {
+    return listaOficios(D).map(function (o) {
+      var dias = D.oficios.items.filter(function (i) { return i.folio === o.folio && i.respuesta; })
+        .map(function (i) { return dia(i.respuesta) - dia(i.envio); })
+        .sort(function (a, b) { return a - b; });
+      var n = o.destinos.length, pasos = [[0, 0]];
+      dias.forEach(function (d, k) {
+        var pct = (k + 1) / n, ult = pasos[pasos.length - 1];
+        if (ult[0] === d) ult[1] = pct; else pasos.push([d, pct]);
+      });
+      return { folio: o.folio, envio: o.envio, destinos: n, pasos: pasos };
+    });
   }
 
   // ------------------------------------------------------------ §2.3 catastro
@@ -640,6 +704,8 @@
   var api = {
     REGLAS: REGLAS, dia: dia, mediana: mediana, variacion: variacion,
     cdc: cdc, estadoCumpl: estadoCumpl, oficios: oficios, catastro: catastro,
+    oficiosMatriz: oficiosMatriz, oficiosPuntos: oficiosPuntos, oficiosRitmo: oficiosRitmo,
+    alertaEspera: alertaEspera,
     participacion: participacion, bienes: bienes, dcpr: dcpr, terreno: terreno,
     presupuestoSeremi: presupuestoSeremi, presupuestoRegiones: presupuestoRegiones,
     regularizacion: regularizacion, eficiencia: eficiencia, convenios: convenios,
