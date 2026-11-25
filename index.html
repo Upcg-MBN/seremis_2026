@@ -1355,6 +1355,42 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       : '<p class="vacio">Todos los indicadores del CDC están en ' + umbral + ' o más.</p>';
   }
 
+  function tarjetaInd(rot, cifra, grafico, pie) {
+    return '<div class="tarjeta ind"><div class="ind-rot">' + esc(rot) + '</div>' +
+      '<div class="ind-num">' + cifra + '</div><div class="chispa">' + grafico + '</div>' +
+      '<div class="ind-pie">' + pie + '</div></div>';
+  }
+
+  // Variación neutra: la flecha dice la dirección y el texto va en tinta. El
+  // color de estado (con su ícono) aparece solo cuando se cruza el umbral de la
+  // regla: pintar de rojo un −1,7 % que no es alerta decía otra cosa.
+  var REGLA_TRIM = ['caida', 'caidaFuerte'];
+  function celdaVar(v, regla) {
+    if (v === null) return '—';
+    v = redondeoPct(v);
+    var e = regla && v < AGG.REGLAS[regla[0]] ? (v < AGG.REGLAS[regla[1]] ? 'critico' : 'alerta') : null;
+    var marca = e ? ico('alerta', 'ico--16') : v === 0 ? '' : ico(v > 0 ? 'sube' : 'baja', 'ico--16');
+    return '<span class="celda-var' + (e ? ' sem sem--' + e : '') + '"' + (e ? ' title="' + ESTADO[e].rot + '"' : '') + '>' +
+      marca + signoPct(v) + '</span>';
+  }
+
+  // Chispa: un solo trazo, sin ejes. Solo muestra la forma de la serie; las
+  // cifras están en la tabla de abajo.
+  function chispa(valores) {
+    var W = 120, H = 32, n = valores.length;
+    if (n < 2) return '';
+    // Escala anclada: al menos ±5 % alrededor del promedio. Con la escala
+    // propia de cada serie, un +0,6 % se dibujaba como una subida empinada.
+    var min = Math.min.apply(null, valores), max = Math.max.apply(null, valores);
+    var medio = (min + max) / 2, piso = Math.abs(medio) * 0.1;
+    if (max - min < piso) { min = medio - piso / 2; max = medio + piso / 2; }
+    var rango = max - min || 1;
+    var pts = valores.map(function (v, i) {
+      return (W * i / (n - 1)).toFixed(1) + ',' + (H - 3 - (v - min) / rango * (H - 6)).toFixed(1);
+    }).join(' ');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Evolución de los últimos ' + n + ' trimestres">' +
+      '<polyline fill="none" stroke="var(--primario-darken-1)" stroke-width="2" vector-effect="non-scaling-stroke" points="' + pts + '"/></svg>';
+  }
   // ------------------------------------------------------ gestión de Bienes
   // Ingresados y finalizados son flujo del periodo (se suman); el stock es
   // saldo (acumulado desde 1998, no solo del año elegido). La comparación es
