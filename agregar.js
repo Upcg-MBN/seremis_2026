@@ -582,15 +582,16 @@
   // ninguna sale de comparar SEREMIs entre sí.
   function semaforo(D) {
     return D.regiones.map(function (reg, r) {
-      // Catastro es opcional: extraer.py no lo publica mientras no tenga
-      // fuente real (10-11-2026), y sin bloque no entra al «peor estado».
-      var fc = cdc(D, r), fo = oficios(D, r), fk = D.catastro ? catastro(D, r) : null;
+      // Catastro, terreno y oficios son opcionales: extraer.py no los publica
+      // (10-11 y 25-11-2026), y sin bloque no entran al «peor estado».
+      var fc = cdc(D, r), fo = D.oficios ? oficios(D, r) : null, fk = D.catastro ? catastro(D, r) : null;
       var fg = bienes(D, { region: reg.codigo, tramites: null }), fd = dcpr(D, r), ft = D.terreno ? terreno(D, r) : null;
       var celdas = {
-        cdc: estadoCdc(fc), oficios: estadoOficios(fo),
+        cdc: estadoCdc(fc),
         gestion: estadoGestion(fg),
         dcpr: estadoDcpr(fd)
       };
+      if (fo) celdas.oficios = estadoOficios(fo);
       if (ft) celdas.terreno = estadoTerreno(ft);
       if (fk) celdas.catastro = estadoCatastro(fk);
       var peorEstado = 'bueno';
@@ -629,7 +630,7 @@
                    texto: 'Ningún título entregado desde el informe anterior, con ' +
                           cl(d.porEntregar) + ' disponible(s) para entregar' });
       }
-      if (f.detalle.oficios.viejos) {
+      if (f.detalle.oficios && f.detalle.oficios.viejos) {
         out.push({ r: f.r, seremi: f.nombre, estado: f.celdas.oficios, dimension: 'Oficios',
                    texto: f.detalle.oficios.viejos + ' oficio(s) sin responder hace ' +
                           REGLAS.oficioViejo + ' días o más; el más antiguo lleva ' +

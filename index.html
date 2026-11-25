@@ -224,10 +224,6 @@ button.barra-fila:hover{background:var(--gris-5)}
 .meta-tick--ref{top:-6px; bottom:-6px; width:3px; background:var(--negro-base); box-shadow:0 0 0 1px var(--blanco-base)}
 .k-tick--ref{width:3px; height:1.125rem; background:var(--negro-base); box-shadow:0 0 0 1px var(--blanco-base)}
 .meta-tick--umbral{width:0; background:none; border-left:2px dashed var(--gris-60)}
-/* Oficios: espera del pendiente más antiguo, sobre la barra de la mediana. */
-.meta-tick--espera{background:var(--gris-70)}
-.meta-tick--alerta{background:var(--chart-estado-alerta)}
-.meta-tick--critico{background:var(--error-darken-3)}
 .k-tick{width:2px; height:0.875rem; background:var(--gris-70)}
 /* Presupuesto por SEREMI: el largo del tramo claro es el presupuesto, el
    relleno azul dentro es lo devengado y lo claro que sobra, el saldo por
@@ -298,49 +294,6 @@ button.barra-fila:hover{background:var(--gris-5)}
 /* En la matriz «Al día» retrocede: el color queda para las excepciones. */
 .matriz .sem--bueno{color:var(--gris-60)}
 .matriz .sem--bueno .ico,.leyenda .ico.sem--bueno{color:var(--gris-50)}
-
-/* ---------- Oficios (23-11-2026): matriz SEREMI × oficio, puntos y ritmo ----------
-   Respondido y esperando van en tinta gris; el color de estado solo aparece
-   al cruzar 30/60 días, con ícono y etiqueta. */
-.of-mat-caja{overflow-x:auto}
-.of-mat thead th{max-width:14rem; overflow:hidden; text-overflow:ellipsis}
-.of-mat .th-ej{overflow:hidden; text-overflow:ellipsis}
-.of-mat th[scope=row],.of-mat thead th:first-child{position:sticky; left:0; z-index:1}
-.of-mat tbody th[scope=row]{background:var(--blanco-base)}
-.of-mat tbody tr:nth-child(even) th[scope=row]{background:var(--gris-5)}
-.of-mat thead th:first-child{z-index:2}
-.of-mat td{white-space:nowrap}
-.of-mat td,.of-mat tbody th{padding-top:0.0625rem; padding-bottom:0.0625rem}
-.of-mat tr.fila-sel,.of-mat tr.fila-sel th[scope=row]{background:var(--secundario-base)}
-.of-cel{display:inline-flex; align-items:center; gap:0.375rem}
-.of-ico-resp,.of-ico-esp{color:var(--gris-50)}
-.of-na{color:var(--gris-30)}
-.of-svg svg{display:block; width:100%; height:auto}
-.of-svg text{font-size:12px; fill:var(--gris-60)}
-.of-svg .of-nom{fill:var(--gris-80)}
-.of-grid,.of-carril{stroke:var(--gris-10); stroke-width:1}
-.of-regla{stroke:var(--gris-40); stroke-width:1; stroke-dasharray:3 3}
-.of-sel{fill:var(--secundario-base)}
-.of-p-resp{fill:var(--primario-darken-1); stroke:var(--blanco-base); stroke-width:1.5}
-.of-p-pend{fill:var(--blanco-base); stroke:var(--gris-50); stroke-width:2}
-.of-p--alerta{stroke:var(--chart-estado-alerta)}
-.of-p--critico{stroke:var(--error-darken-3)}
-.of-med{stroke:var(--gris-80); stroke-width:2}
-.of-l-act{fill:none; stroke:var(--primario-darken-1); stroke-width:2}
-.of-l-ant{fill:none; stroke:var(--gris-40); stroke-width:1.5}
-.of-l-act-fin{fill:var(--primario-darken-1); stroke:var(--blanco-base); stroke-width:1.5}
-.of-l-ant-fin{fill:var(--gris-40); stroke:var(--blanco-base); stroke-width:1.5}
-.of-svg .of-fin--act{fill:var(--gris-80); font-weight:500}
-.of-k{display:inline-block; width:0.625rem; height:0.625rem; border-radius:50%; box-sizing:border-box}
-.of-k--resp{background:var(--primario-darken-1)}
-.of-k--pend{border:2px solid var(--gris-50)}
-.of-k-l{display:inline-block; width:1rem; height:2px}
-.of-k-l--act{background:var(--primario-darken-1)}
-.of-k-l--ant{background:var(--gris-40)}
-.of-medidor{display:inline-block; width:4rem; height:0.375rem; border-radius:3px; background:var(--gris-10); overflow:hidden}
-.of-medidor span{display:block; height:100%; background:var(--primario-darken-1)}
-.sr-only{position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
-.matriz-caja{overflow:auto; flex:1; min-height:0; margin:0 -0.25rem}
 
 /* ---------- Alertas ---------- */
 .alertas{display:flex; flex-direction:column; gap:0.5rem; overflow:auto; flex:1; min-height:0}
@@ -690,7 +643,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       <button type="button" class="pag" data-pag="gestion" title="Gestión de Bienes"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="casa"></svg><span class="txt">Gestión de Bienes</span></button>
       <button type="button" class="pag" data-pag="dcpr" title="Gestión Regularización"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="documento"></svg><span class="txt">Gestión Regularización</span></button>
       <button type="button" class="pag" data-pag="convenios" title="Gestión de Convenios"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="personas"></svg><span class="txt">Gestión de Convenios</span></button>
-      <button type="button" class="pag" data-pag="oficios" title="Respuesta a oficios"><svg class="ico ico--24" viewBox="0 0 24 24" aria-hidden="true" data-i="correo"></svg><span class="txt">Respuesta a oficios</span></button>
       <div class="menu-pie">
         <a href="https://lab-reportes.bienes.cl/" target="_top" title="Ir al Portal de Visualizaciones"><svg class="ico ico--22" viewBox="0 0 24 24" aria-hidden="true" data-i="home"></svg><span class="txt">Portal de Visualizaciones</span></a>
         <button type="button" id="abrir-glosario" title="Glosario y reglas de alerta"><svg class="ico ico--22" viewBox="0 0 24 24" aria-hidden="true" data-i="ayuda"></svg><span class="txt">Glosario y reglas</span></button>
@@ -908,52 +860,10 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
            del PDF, armarMapa(), pintarTerreno() y <script src="mapa.js">, y
            PUBLICAR_TERRENO = True en extraer.py. mapa.js sigue en el repo. -->
 
-      <!-- ----------------------------------------------- Respuesta a oficios -->
-      <section class="pagina" id="p-oficios" aria-label="Respuesta a oficios" hidden>
-        <div class="kpis" id="of-kpis" data-sec="of-kpis"></div>
-        <div class="fila fila--toda">
-          <div class="tarjeta col ancho" data-sec="of-matriz">
-            <div class="t-cab">
-              <h2>¿Quién debe respuesta?</h2>
-              <div class="leyenda" aria-hidden="true">
-                <span><svg class="ico ico--16 of-ico-resp" viewBox="0 0 24 24" data-i="listo"></svg>Respondió: días que tardó</span>
-                <span><svg class="ico ico--16 of-ico-esp" viewBox="0 0 24 24" data-i="reloj"></svg>Sin respuesta: días esperando</span>
-              </div>
-            </div>
-            <p class="t-sub" id="of-mat-sub"></p>
-            <div class="matriz-caja of-mat-caja" id="of-matriz"></div>
-          </div>
-          <div class="tarjeta col angosto" data-sec="of-puntos">
-            <div class="t-cab">
-              <h2>Tiempo de respuesta por SEREMI</h2>
-              <div class="leyenda" aria-hidden="true">
-                <span><i class="of-k of-k--resp"></i>Respuesta</span>
-                <span><i class="of-k of-k--pend"></i>Esperando</span>
-                <span><i class="k-tick"></i>Mediana (3 o más)</span>
-              </div>
-            </div>
-            <p class="t-sub">Un punto por respuesta, en días desde el envío; huecos: sin respuesta, en lo que llevan esperando.</p>
-            <div class="of-svg" id="of-puntos"></div>
-            <details class="tabla" id="of-puntos-tabla"></details>
-          </div>
-        </div>
-        <div class="fila fila--2-3 fila--toda">
-          <div class="tarjeta col ancho" data-sec="of-ritmo">
-            <div class="t-cab">
-              <h2>Ritmo de respuesta</h2>
-              <div class="leyenda" id="of-ritmo-ley" aria-hidden="true"></div>
-            </div>
-            <p class="t-sub">% de las SEREMIs destinatarias que ya respondió, por días desde el envío. Una línea por oficio, hasta la fecha de carga.</p>
-            <div class="of-svg" id="of-ritmo"></div>
-            <details class="tabla" id="of-ritmo-tabla"></details>
-          </div>
-          <div class="tarjeta col angosto" data-sec="of-pend">
-            <div class="t-cab"><h2>Sin responder</h2></div>
-            <p class="t-sub" id="of-pend-sub"></p>
-            <div class="datos ajusta" id="of-pend"></div>
-          </div>
-        </div>
-      </section>
+      <!-- Respuesta a oficios: retirada el 25-11-2026 a pedido del usuario
+           (falta decidir qué oficios se siguen). Para volver, recuperar del
+           commit anterior esta sección, su botón, su grupo del PDF,
+           pintarOficios() y su glosario, y PUBLICAR_OFICIOS = True en extraer.py. -->
 
       <!-- Solo para el informe PDF: en pantalla el glosario es el diálogo. -->
       <section class="pagina" id="p-glosario" aria-label="Glosario y reglas de alerta" hidden>
@@ -1006,13 +916,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         <label class="opcion"><input type="checkbox" name="sec" value="cv-kpis" checked>Indicadores</label>
         <label class="opcion"><input type="checkbox" name="sec" value="cv-tabla-ft" checked>Convenios FT</label>
         <label class="opcion"><input type="checkbox" name="sec" value="cv-tabla-tramite" checked>Convenios en trámite</label>
-      </fieldset>
-      <fieldset><legend>Oficios</legend>
-        <label class="opcion"><input type="checkbox" name="sec" value="of-kpis">Indicadores de respuesta</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="of-matriz">¿Quién debe respuesta? (SEREMI × oficio)</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="of-puntos">Tiempo de respuesta por SEREMI</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="of-ritmo">Ritmo de respuesta</label>
-        <label class="opcion"><input type="checkbox" name="sec" value="of-pend">Oficios sin responder</label>
       </fieldset>
       <fieldset><legend>Referencia</legend>
         <label class="opcion"><input type="checkbox" name="sec" value="glosario" checked>Glosario y reglas de alerta</label>
@@ -1218,10 +1121,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       case 'convenios':
         return 'Fuente: Base_Convenios.xlsx (U. Convenios) · Corte: ' +
           (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte en la planilla');
-      case 'oficios':
-        return esDemo('oficios')
-          ? 'Respuesta a oficios: el registro de oficios todavía no tiene filas. Los datos de esta página son de ejemplo.'
-          : 'Fuente: Sistema de Firma y registro de oficios en seguimiento · Carga: ' + esc(fecha(D.hoy));
       default:
         return cortes();
     }
@@ -1235,8 +1134,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
       'Presupuesto: ' + fecha(D.presupuestoSeremi.corte) + ' · Panel Presupuestario, página 7',
       'Bienes: ' + mesLargo(D.gestion.mes_parcial) + ' · ' + FUENTE_BIENES.nombre,
       'Regularización: ' + corteDcpr() + ' · Panel de Gestión Mensual DCPR',
-      'Convenios: ' + (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte') + ' · Base_Convenios.xlsx (U. Convenios)',
-      'Oficios: ' + (esDemo('oficios') ? 'registro sin filas, datos de ejemplo' : 'carga ' + fecha(D.hoy) + ' · Sistema de Firma')
+      'Convenios: ' + (D.convenios.corte ? fecha(D.convenios.corte) : 'sin fecha de corte') + ' · Base_Convenios.xlsx (U. Convenios)'
     ].join('\n');
   }
 
@@ -1303,11 +1201,9 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
   // [clave de la celda y del bloque de datos.js, rótulo] — las dimensiones
   // del documento, usadas por el semáforo, las alertas y el aviso de «datos
   // mixtos» (Catastro, §2.3, fuera desde el 10-11-2026 por falta de fuente).
-  // Oficios no entra a la tabla «Estado por SEREMI y dimensión» del Resumen
-  // (ver MATRIZ_DIMS abajo), pero sigue siendo una dimensión real para el
-  // semáforo y las alertas.
+  // Oficios (§2.2) salió el 25-11-2026 con su página.
   var DIMENSIONES = [
-    ['cdc', 'CDC'], ['oficios', 'Oficios'],
+    ['cdc', 'CDC'],
     ['gestion', 'Bienes'], ['dcpr', 'DCPR']
   ];
   function rotDim(rot) {
@@ -1317,7 +1213,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
 
   // Columnas de la tabla «Estado por SEREMI y dimensión»: no son las mismas
   // cinco del semáforo (agrega Presupuesto y Convenios, que están fuera de
-  // él; saca Oficios). Convenios no tiene umbral de alerta acordado (fuente
+  // él). Convenios no tiene umbral de alerta acordado (fuente
   // nueva): va con un ícono «informativo» en vez de un estado
   // bueno/alerta/crítico, para no sugerir una lectura de semáforo que no está
   // definida. G. en terreno salió el 10-11-2026 con su página. `pag` es la
@@ -1457,234 +1353,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
         return fila;
       }), true, todas ? [1, 7] : [6])
       : '<p class="vacio">Todos los indicadores del CDC están en ' + umbral + ' o más.</p>';
-  }
-
-  // --------------------------------------------------------------- oficios
-  // Oficios (23-11-2026, fuente Sistema de Firma): cinco piezas. La matriz
-  // dice quién debe respuesta, oficio por oficio; los puntos, cuánto tarda
-  // cada SEREMI (cada respuesta y no solo la mediana: con pocos oficios la
-  // mediana sola es un dato disfrazado de patrón); el ritmo, cómo llegan las
-  // respuestas desde el envío; la lista, lo pendiente.
-  var VIA = { cita: 'su oficio cita el N°', manual: 'registrada a mano' };
-
-  // Paso de la grilla en días: como mucho seis divisiones.
-  function pasoDias(max) {
-    var pasos = [5, 10, 15, 30, 60, 90, 180, 365];
-    for (var i = 0; i < pasos.length; i++) if (Math.ceil(max / pasos[i]) <= 6) return pasos[i];
-    return 365;
-  }
-
-  function celdaOficio(c, nom, o) {
-    if (!c) return '<span class="of-na" title="' + esc(o.folio + ' no se envió a ' + nom) + '">—</span>';
-    if (c.estado === 'resp') {
-      var t = nom + ' · ' + o.folio + ': respondió el ' + fecha(c.respuesta) + (c.nroResp ? ' con ' + c.nroResp : '') +
-              (c.via ? ' (' + VIA[c.via] + ')' : '') + ', ' + num(c.dias) + ' días después del envío';
-      return '<span class="of-cel" title="' + esc(t) + '">' + ico('listo', 'ico--16 of-ico-resp') + num(c.dias) + '</span>';
-    }
-    var tp = nom + ' · ' + o.folio + ': sin respuesta, ' + num(c.dias) + ' días esperando' +
-             (c.alerta ? ' (' + ESTADO[c.alerta].rot + ')' : '');
-    return c.alerta
-      ? '<span class="of-cel sem sem--' + c.alerta + '" title="' + esc(tp) + '">' + ico('alerta', 'ico--16') + num(c.dias) +
-        '<span class="sr-only">' + ESTADO[c.alerta].rot + '</span></span>'
-      : '<span class="of-cel" title="' + esc(tp) + '">' + ico('reloj', 'ico--16 of-ico-esp') + num(c.dias) + '</span>';
-  }
-
-  function svgPuntos(m, pts) {
-    var W = 440, IZ = 118, DE = 14, FH = 20, TOP = 4, n = m.filas.length, H = TOP + n * FH + 24;
-    var max = 1;
-    m.filas.forEach(function (f) { f.celdas.forEach(function (c) { if (c && c.dias > max) max = c.dias; }); });
-    var paso = pasoDias(max), tope = Math.ceil(max / paso) * paso;
-    var x = function (d) { return (IZ + d / tope * (W - IZ - DE)).toFixed(1); };
-    var s = '', yEje = TOP + n * FH;
-    for (var t = 0; t <= tope; t += paso) {
-      s += '<line class="of-grid" x1="' + x(t) + '" y1="' + TOP + '" x2="' + x(t) + '" y2="' + yEje + '"/>' +
-           '<text class="of-eje" x="' + x(t) + '" y="' + (yEje + 16) + '" text-anchor="middle">' + t + '</text>';
-    }
-    s += '<text class="of-eje" x="' + (IZ - 8) + '" y="' + (yEje + 16) + '" text-anchor="end">días</text>';
-    if (AGG.REGLAS.oficioViejo <= tope) {
-      s += '<line class="of-regla" x1="' + x(AGG.REGLAS.oficioViejo) + '" y1="' + TOP + '" x2="' + x(AGG.REGLAS.oficioViejo) +
-           '" y2="' + yEje + '"><title>Alerta desde ' + AGG.REGLAS.oficioViejo + ' días de espera</title></line>';
-    }
-    m.filas.forEach(function (f, i) {
-      var y = TOP + i * FH + FH / 2, nom = D.regiones[f.r].nombre, p = pts[f.r];
-      if (f.r === filtro.r) s += '<rect class="of-sel" x="0" y="' + (TOP + i * FH) + '" width="' + W + '" height="' + FH + '" rx="4"/>';
-      s += '<text class="of-nom" x="' + (IZ - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + esc(nom) + '</text>' +
-           '<line class="of-carril" x1="' + IZ + '" y1="' + y + '" x2="' + (W - DE) + '" y2="' + y + '"/>';
-      if (p.mediana !== null) {
-        s += '<line class="of-med" x1="' + x(p.mediana) + '" y1="' + (y - 7) + '" x2="' + x(p.mediana) + '" y2="' + (y + 7) + '">' +
-             '<title>' + esc(nom + ': mediana ' + dec(p.mediana, 0) + ' días en ' + p.resp.length + ' respuestas') + '</title></line>';
-      }
-      f.celdas.forEach(function (c, k) {
-        if (!c) return;
-        var o = m.oficios[k], cx = +x(c.dias);
-        if (c.estado === 'resp') {
-          s += '<circle class="of-p-resp" cx="' + cx + '" cy="' + y + '" r="4.5"><title>' +
-               esc(nom + ' · ' + o.folio + ': ' + num(c.dias) + ' días (respondió el ' + fecha(c.respuesta) + ')') + '</title></circle>';
-          return;
-        }
-        var tt = '<title>' + esc(nom + ' · ' + o.folio + ': ' + num(c.dias) + ' días esperando' +
-                                 (c.alerta ? ' (' + ESTADO[c.alerta].rot + ')' : '')) + '</title>';
-        s += c.alerta
-          ? '<path class="of-p-pend of-p--' + c.alerta + '" d="M' + (cx - 5.5) + ' ' + (y + 4.5) + 'L' + cx + ' ' + (y - 5.5) +
-            'L' + (cx + 5.5) + ' ' + (y + 4.5) + 'Z">' + tt + '</path>'
-          : '<circle class="of-p-pend" cx="' + cx + '" cy="' + y + '" r="4.5">' + tt + '</circle>';
-      });
-    });
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Días de respuesta de cada SEREMI: un punto por respuesta y un marcador hueco por oficio sin respuesta">' + s + '</svg>';
-  }
-
-  function svgRitmo(rit) {
-    var W = 900, H = 210, IZ = 44, DE = 150, TOP = 10, BAJO = 26, hoy = AGG.dia(D.hoy);
-    var fin = rit.map(function (o) { return hoy - AGG.dia(o.envio); });
-    var maxX = Math.max.apply(null, fin.concat([AGG.REGLAS.oficioViejo]));
-    var paso = pasoDias(maxX), tope = Math.ceil(maxX / paso) * paso;
-    var x = function (d) { return (IZ + d / tope * (W - IZ - DE)).toFixed(1); };
-    var y = function (p) { return (TOP + (1 - p) * (H - TOP - BAJO)).toFixed(1); };
-    var s = '';
-    [0, 0.25, 0.5, 0.75, 1].forEach(function (p) {
-      s += '<line class="of-grid" x1="' + IZ + '" y1="' + y(p) + '" x2="' + (W - DE) + '" y2="' + y(p) + '"/>' +
-           '<text class="of-eje" x="' + (IZ - 6) + '" y="' + (+y(p) + 4) + '" text-anchor="end">' + Math.round(p * 100) + ' %</text>';
-    });
-    for (var t = 0; t <= tope; t += paso) {
-      s += '<text class="of-eje" x="' + x(t) + '" y="' + (H - 8) + '" text-anchor="middle">' + t + (t === tope ? ' días' : '') + '</text>';
-    }
-    s += '<line class="of-regla" x1="' + x(AGG.REGLAS.oficioViejo) + '" y1="' + TOP + '" x2="' + x(AGG.REGLAS.oficioViejo) +
-         '" y2="' + y(0) + '"><title>Alerta desde ' + AGG.REGLAS.oficioViejo + ' días de espera</title></line>';
-    var rotular = rit.length <= 4;
-    // Los anteriores primero, en gris; el más reciente encima, en azul.
-    for (var k = rit.length - 1; k >= 0; k--) {
-      var o = rit[k], cls = k === 0 ? 'of-l-act' : 'of-l-ant', d = 'M' + x(0) + ' ' + y(0);
-      o.pasos.forEach(function (p) { d += 'H' + x(p[0]) + 'V' + y(p[1]); });
-      d += 'H' + x(fin[k]);
-      var ult = o.pasos[o.pasos.length - 1][1], resp = Math.round(ult * o.destinos);
-      var tit = '<title>' + esc(o.folio + ': ' + resp + ' de ' + o.destinos + ' SEREMIs respondieron (' + pct(ult, 0) + ') a los ' +
-                                num(fin[k]) + ' días del envío') + '</title>';
-      s += '<path class="' + cls + '" d="' + d + '">' + tit + '</path>' +
-           '<circle class="' + cls + '-fin" cx="' + x(fin[k]) + '" cy="' + y(ult) + '" r="3.5">' + tit + '</circle>';
-      if (rotular || k === 0) {
-        s += '<text class="of-fin' + (k === 0 ? ' of-fin--act' : '') + '" x="' + (+x(fin[k]) + 8) + '" y="' + (+y(ult) + 4) + '">' +
-             esc(o.folio) + ' · ' + pct(ult, 0) + '</text>';
-      }
-    }
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Porcentaje de SEREMIs que ya respondió cada oficio, por días desde el envío">' + s + '</svg>';
-  }
-
-  function pintarOficios() {
-    var todos = AGG.oficios(D, filtro.r), R = AGG.REGLAS;
-    var lista = D.oficios.oficios || [];
-    var nOf = filtro.r === null ? lista.length
-      : lista.filter(function (o) { return o.destinos.indexOf(filtro.r) >= 0; }).length;
-    var pend = todos.pendientes;
-    $('of-kpis').innerHTML = [
-      ['correo', 'Oficios en seguimiento', '', num(nOf),
-       num(todos.total) + (todos.total === 1 ? ' solicitud' : ' solicitudes') + ' a SEREMIs'],
-      ['alerta', 'Respuestas pendientes', todos.esperaMaxima >= R.oficioCritico ? 'rojo' : todos.viejos ? 'ambar' : '',
-       num(pend.length), (todos.viejos ? num(todos.viejos) : 'ninguna') + ' con ' + R.oficioViejo + ' días o más'],
-      ['listo', 'Tasa de respuesta', '', todos.tasa === null ? '—' : pct(todos.tasa, 0),
-       '<span class="of-medidor" aria-hidden="true"><span style="width:' + ((todos.tasa || 0) * 100).toFixed(1) + '%"></span></span>' +
-       num(todos.respondidos) + ' de ' + num(todos.total)],
-      ['reloj', 'Mediana de respuesta', '', todos.mediana === null ? '—' : num(todos.mediana), 'días, solo respondidas']
-    ].map(function (t) {
-      var c = t[2] ? ' kpi-rot--' + t[2] : '', n = t[2] ? ' kpi-num--' + t[2] : '';
-      return '<div class="tarjeta kpi"><div class="kpi-rot' + c + '">' + ico(t[0], 'ico--22') + t[1] + '</div>' +
-        '<div class="kpi-num' + n + '">' + t[3] + '</div><div class="kpi-pie">' + t[4] + '</div></div>';
-    }).join('');
-
-    // 1. ¿Quién debe respuesta? Filas = las 16 SEREMIs; el filtro resalta, no oculta.
-    var m = AGG.oficiosMatriz(D);
-    $('of-mat-sub').textContent = 'Un oficio por columna, el más reciente primero. Alerta desde ' + R.oficioViejo +
-      ' días de espera y crítico desde ' + R.oficioCritico + ' (regla del seguimiento, no un plazo). Cómo se cuenta una respuesta: Glosario.';
-    $('of-matriz').innerHTML = m.oficios.length
-      ? '<table class="matriz of-mat"><thead><tr><th scope="col">SEREMI</th>' +
-        m.oficios.map(function (o) {
-          return '<th scope="col" title="' + esc(o.folio + ' · ' + o.materia + ' · enviado el ' + fecha(o.envio)) + '">' +
-            esc(o.folio) + '<span class="th-ej">' + fecha(o.envio).slice(0, 5) + ' · ' + esc(o.materia) + '</span></th>';
-        }).join('') + '</tr></thead><tbody>' +
-        m.filas.map(function (f) {
-          var nom = D.regiones[f.r].nombre;
-          return '<tr' + (f.r === filtro.r ? ' class="fila-sel"' : '') + '><th scope="row">' + esc(nom) + '</th>' +
-            f.celdas.map(function (c, k) { return '<td>' + celdaOficio(c, nom, m.oficios[k]) + '</td>'; }).join('') + '</tr>';
-        }).join('') + '</tbody></table>'
-      : '<p class="vacio">No hay oficios en seguimiento.</p>';
-
-    // 2. Tiempo de respuesta por SEREMI: una fila por SEREMI, un punto por respuesta.
-    var pts = AGG.oficiosPuntos(D);
-    $('of-puntos').innerHTML = m.oficios.length ? svgPuntos(m, pts) : '';
-    tablaDe($('of-puntos-tabla'), 'Ver tabla de datos',
-      ['SEREMI', 'Respuestas', 'Mediana (días)', 'Más rápida', 'Más lenta', 'Sin respuesta', 'Espera máxima (días)'],
-      pts.map(function (p) {
-        return [D.regiones[p.r].nombre, num(p.resp.length), p.mediana === null ? '—' : dec(p.mediana, 0),
-                p.resp.length ? num(Math.min.apply(null, p.resp)) : '—', p.resp.length ? num(Math.max.apply(null, p.resp)) : '—',
-                num(p.pend.length), p.pend.length ? num(Math.max.apply(null, p.pend)) : '—'];
-      }));
-
-    // 3. Ritmo de respuesta: el oficio más reciente en azul, los anteriores en gris.
-    var rit = AGG.oficiosRitmo(D);
-    $('of-ritmo').innerHTML = rit.length ? svgRitmo(rit) : '';
-    $('of-ritmo-ley').innerHTML = rit.length >= 2
-      ? '<span><i class="of-k-l of-k-l--act"></i>Más reciente (' + esc(rit[0].folio) + ')</span>' +
-        '<span><i class="of-k-l of-k-l--ant"></i>Anteriores</span>'
-      : '';
-    tablaDe($('of-ritmo-tabla'), 'Ver tabla de datos',
-      ['Oficio', 'Enviado', 'SEREMIs destinatarias', 'Respondieron', '% respondido', 'Mediana (días)'],
-      rit.map(function (o) {
-        var dias = D.oficios.items.filter(function (i) { return i.folio === o.folio && i.respuesta; })
-          .map(function (i) { return AGG.dia(i.respuesta) - AGG.dia(i.envio); });
-        var ult = o.pasos[o.pasos.length - 1][1];
-        return [o.folio, fecha(o.envio), num(o.destinos), num(dias.length), pct(ult, 0),
-                dias.length ? dec(AGG.mediana(dias), 0) : '—'];
-      }));
-
-    // 4. Sin responder, del más antiguo al más reciente.
-    $('of-pend-sub').textContent = pend.length
-      ? pend.length + ' respuesta(s) pendiente(s), de la más antigua a la más reciente.'
-      : 'Todas las solicitudes en seguimiento tienen respuesta.';
-    $('of-pend').innerHTML = pend.length ? tablaHtml(
-      ['Oficio', 'SEREMI', 'Enviado', 'Días'],
-      pend.map(function (o) {
-        return [esc(o.folio) + '<br><small style="color:var(--gris-60)">' + esc(o.materia) + '</small>',
-                esc(D.regiones[o.r].nombre), fecha(o.envio),
-                (o.espera >= R.oficioViejo ? '<span class="sem sem--' +
-                  (o.espera >= R.oficioCritico ? 'critico' : 'alerta') + '" style="justify-content:flex-end">' +
-                  ico('alerta', 'ico--16') + num(o.espera) + '</span>' : num(o.espera))];
-      }), true, [1]) : '<p class="vacio">Sin respuestas pendientes.</p>';
-  }
-
-  function tarjetaInd(rot, cifra, grafico, pie) {
-    return '<div class="tarjeta ind"><div class="ind-rot">' + esc(rot) + '</div>' +
-      '<div class="ind-num">' + cifra + '</div><div class="chispa">' + grafico + '</div>' +
-      '<div class="ind-pie">' + pie + '</div></div>';
-  }
-
-  // Variación neutra: la flecha dice la dirección y el texto va en tinta. El
-  // color de estado (con su ícono) aparece solo cuando se cruza el umbral de la
-  // regla: pintar de rojo un −1,7 % que no es alerta decía otra cosa.
-  var REGLA_TRIM = ['caida', 'caidaFuerte'];
-  function celdaVar(v, regla) {
-    if (v === null) return '—';
-    v = redondeoPct(v);
-    var e = regla && v < AGG.REGLAS[regla[0]] ? (v < AGG.REGLAS[regla[1]] ? 'critico' : 'alerta') : null;
-    var marca = e ? ico('alerta', 'ico--16') : v === 0 ? '' : ico(v > 0 ? 'sube' : 'baja', 'ico--16');
-    return '<span class="celda-var' + (e ? ' sem sem--' + e : '') + '"' + (e ? ' title="' + ESTADO[e].rot + '"' : '') + '>' +
-      marca + signoPct(v) + '</span>';
-  }
-
-  // Chispa: un solo trazo, sin ejes. Solo muestra la forma de la serie; las
-  // cifras están en la tabla de abajo.
-  function chispa(valores) {
-    var W = 120, H = 32, n = valores.length;
-    if (n < 2) return '';
-    // Escala anclada: al menos ±5 % alrededor del promedio. Con la escala
-    // propia de cada serie, un +0,6 % se dibujaba como una subida empinada.
-    var min = Math.min.apply(null, valores), max = Math.max.apply(null, valores);
-    var medio = (min + max) / 2, piso = Math.abs(medio) * 0.1;
-    if (max - min < piso) { min = medio - piso / 2; max = medio + piso / 2; }
-    var rango = max - min || 1;
-    var pts = valores.map(function (v, i) {
-      return (W * i / (n - 1)).toFixed(1) + ',' + (H - 3 - (v - min) / rango * (H - 6)).toFixed(1);
-    }).join(' ');
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Evolución de los últimos ' + n + ' trimestres">' +
-      '<polyline fill="none" stroke="var(--primario-darken-1)" stroke-width="2" vector-effect="non-scaling-stroke" points="' + pts + '"/></svg>';
   }
 
   // ------------------------------------------------------ gestión de Bienes
@@ -2315,7 +1983,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     pintarMatriz();
     pintarAlertas();
     pintarCdc();
-    pintarOficios();
     pintarGestion();
     pintarDcpr();
     pintarConvenios();
@@ -2432,9 +2099,6 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
      Math.round(AGG.REGLAS.cdcAlerta * 100) + ' %, alerta bajo ' + Math.round(AGG.REGLAS.cdcAlerta * 100) + ' % y crítico bajo ' +
      Math.round(AGG.REGLAS.cdcCritico * 100) + ' %: los mismos cortes con que DIPLAP colorea su panel. La página lista los indicadores bajo ' +
      Math.round(AGG.REGLAS.cdcAlerta * 100) + ' % aunque el global de la SEREMI esté al día. Las metas son en parte compartidas y en parte diferenciadas por región. Cada indicador trae dos metas de DIPLAP: la «Meta anual» (el objetivo del año completo) y la «Meta al periodo» (esa misma meta prorrateada a lo que va corrido del año, la que se usa para calcular el cumplimiento).'],
-    ['Oficios · días de respuesta',
-     'Se siguen los oficios anotados en el registro de seguimiento (una línea por oficio, con su N° del Sistema de Firma, por ejemplo DBSN-1048). La fecha de envío es la de numeración del oficio en el Sistema de Firma. Una SEREMI respondió cuando un oficio suyo, numerado después del envío, cita el N° con su prefijo («ORD DBSN N° 1048»), o cuando la respuesta se registró a mano (llegó por otra vía o no cita el N°); la fecha de respuesta es la de numeración de ese oficio, o la registrada. Los días van del envío a la respuesta. Las solicitudes sin respuesta cuentan su espera hasta la fecha de carga y no se descartan: dejarlas fuera esconde justamente a quien no contesta. La mediana de una SEREMI se muestra desde 3 respuestas. No hay plazo estándar de respuesta; el panel marca alerta desde ' +
-     AGG.REGLAS.oficioViejo + ' días de espera y crítico desde ' + AGG.REGLAS.oficioCritico + ', como regla operativa del seguimiento, no como incumplimiento.'],
     ['Gestión de Bienes · ingresados, finalizados, stock y rezago',
      'Trámites de ' + FUENTE_BIENES.nombre + ': ' + D.gestion.tramites.map(function (t) { return t.nombre; }).join(', ') +
      (D.gestion.origen === 'autorizaciones'
@@ -2454,7 +2118,7 @@ legend{padding:0; margin-bottom:0.25rem; font-size:max(11px,0.75rem); font-weigh
     ['Mes y trimestre en curso',
      'Sus cifras están incompletas. Nunca entran en las comparaciones contra el periodo anterior y se informan por separado.'],
     ['Fuentes',
-     'CDC: Panel de Gestión Institucional 2026 de DIPLAP. Gestión Regularización: Panel de Gestión Mensual del DCPR (títulos y tramitadas de su fuente principal; ingresados, resoluciones, proceso y CBR de su sub-panel «Flujos»). Presupuesto por SEREMI: Panel Presupuestario del Departamento de Presupuesto (página 7). Gestión de Bienes: ' + FUENTE_BIENES.nombre + ' (' + FUENTE_BIENES.url + '). Gestión de Convenios: Base_Convenios.xlsx (planilla de UPCG). Oficios: planilla oficios.xlsx, en la carpeta compartida de UPCG; mientras no tenga filas, su página muestra datos de ejemplo rotulados así.']
+     'CDC: Panel de Gestión Institucional 2026 de DIPLAP. Gestión Regularización: Panel de Gestión Mensual del DCPR (títulos y tramitadas de su fuente principal; ingresados, resoluciones, proceso y CBR de su sub-panel «Flujos»). Presupuesto por SEREMI: Panel Presupuestario del Departamento de Presupuesto (página 7). Gestión de Bienes: ' + FUENTE_BIENES.nombre + ' (' + FUENTE_BIENES.url + '). Gestión de Convenios: Base_Convenios.xlsx (planilla de UPCG).']
   ];
   $('glo-lista').innerHTML = $('glo-imp').innerHTML = GLOSARIO.map(function (g) {
     return '<dt>' + esc(g[0]) + '</dt><dd>' + esc(g[1]) + '</dd>';
